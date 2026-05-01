@@ -40,7 +40,7 @@ Data provenance note:
 
 Current bathymetry content is derived from GEBCO sources, and visual styling is inspired by EMODnet bathymetry colour approaches.
 
-## ⚠️ Important Warning
+## Important Warning
 
 **⚠️ NOT FOR NAVIGATION.**
 
