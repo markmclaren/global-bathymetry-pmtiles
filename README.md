@@ -14,6 +14,12 @@ I am not a bathymetry domain expert.
 
 The goal of this project is to provide an interactive visualisation workflow for exploring bathymetry data in the browser.
 
+## Project Status
+
+This project is a work in progress.
+
+Current published tiles prioritise a compact global test dataset, and additional higher zoom levels are actively being developed.
+
 ### Motivation
 
 I wanted to host a 2D bathymetry visualisation with enough detail to be genuinely useful. The styling from EMODnet caught my eye but it only covers European waters — I wanted something with global coverage.
