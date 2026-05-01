@@ -45,6 +45,7 @@
   // ---------------------------------------------------
 
   const pmtilesCache = new Map();
+  const pmtilesHeaderCache = new Map();
   const recolouredTileCache = new Map();
   const MAX_RECOLOURED_TILE_CACHE_SIZE = 512;
   const queryCanvas = document.createElement('canvas');
@@ -56,7 +57,6 @@
 
   let activePalette = styleSelect.value;
   let appliedPalette = null;
-  let rawRgbHeaderPromise;
 
   const CARTO_BASEMAPS = {
     dark: {
@@ -108,8 +108,33 @@
     return pmtilesCache.get(url);
   }
 
+  function getPmtilesHeader(url) {
+    if (!pmtilesHeaderCache.has(url)) {
+      pmtilesHeaderCache.set(url, getPmtilesArchive(url).getHeader());
+    }
+    return pmtilesHeaderCache.get(url);
+  }
+
+  async function getArchiveMaxZoom(url) {
+    const header = await getPmtilesHeader(url);
+    return Math.max(0, Number(header.maxZoom || 0));
+  }
+
+  async function getOverzoomedTileRequest(url, z, x, y) {
+    const maxZoom = await getArchiveMaxZoom(url);
+    const sourceZ = Math.min(z, maxZoom);
+    const zoomDelta = Math.max(0, z - sourceZ);
+    const scale = 2 ** zoomDelta;
+    return {
+      maxZoom,
+      sourceZ,
+      sourceX: Math.floor(x / scale),
+      sourceY: Math.floor(y / scale),
+    };
+  }
+
   // Warm up the PMTiles header immediately so the first depth query is faster.
-  rawRgbHeaderPromise = getPmtilesArchive(RAWRGB_PMTILES_URL).getHeader();
+  getPmtilesHeader(RAWRGB_PMTILES_URL);
 
   function setRecolouredTileCache(key, valuePromise) {
     recolouredTileCache.set(key, valuePromise);
@@ -174,7 +199,7 @@
   }
 
   async function getDepthQueryMaxZoom(archive) {
-    const header = await rawRgbHeaderPromise;
+    const header = await getPmtilesHeader(RAWRGB_PMTILES_URL);
     return Math.max(0, Number(header.maxZoom || 0));
   }
 
@@ -205,18 +230,19 @@
   }
 
   maplibregl.addProtocol('rawrgbpmtiles', async (params) => {
-    const cacheKey = params.url;
+    const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
+    const { sourceZ, sourceX, sourceY } = await getOverzoomedTileRequest(pmtilesUrl, z, x, y);
+    const cacheKey = `${pmtilesUrl}/${sourceZ}/${sourceX}/${sourceY}?palette=${palette}`;
     const cached = recolouredTileCache.get(cacheKey);
     if (cached) {
       return { data: await cached };
     }
 
-    const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
     const stops = palettes[palette]?.stops || palettes.rainbowcolour?.stops || [];
 
     const recolourPromise = (async () => {
       const archive = getPmtilesArchive(pmtilesUrl);
-      const tile = await archive.getZxy(z, x, y);
+      const tile = await archive.getZxy(sourceZ, sourceX, sourceY);
       if (!tile || !tile.data) return new Uint8Array();
       const bytes = tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
       return workerRecolor(bytes, stops);
