@@ -23,4 +23,6 @@ This build exists to compare perceived responsiveness against the current produc
 
 ## Important Note
 
-If GitHub Pages is configured to publish only from the `docs/` folder, this top-level `docs-worker/` folder will not be served automatically. In that case, this folder is still useful for local testing or as a staging area before copying the test build under `docs/`.
+Because this folder now lives under `docs/`, it can be published by a standard GitHub Pages setup that serves from the `docs/` directory.
+
+If this repository is published as a project site, the test build should be reachable at `/docs-worker/` under the site root.
