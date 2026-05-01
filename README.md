@@ -52,26 +52,18 @@ No endorsement is implied by GEBCO, EMODnet, CARTO, EOX, s2maps.eu, MapLibre, or
 
 ## Credits And Attribution
 
-- GEBCO for bathymetry data foundations.
-- EMODnet for inspiration in approach and colour styling ideas.
-- CARTO for basemap and label raster tiles.
-- EOX and s2maps.eu for Sentinel-2 cloudless satellite base imagery.
-- MapLibre GL JS for web map rendering.
-- PMTiles for cloud-optimized single-file tiled data delivery.
+- GEBCO for bathymetry data foundations: [https://www.gebco.net/](https://www.gebco.net/)
+- EMODnet for inspiration in approach and colour styling ideas: [https://emodnet.ec.europa.eu/](https://emodnet.ec.europa.eu/)
+- CARTO for basemap and label raster tiles: [https://carto.com/attributions](https://carto.com/attributions)
+- EOX and s2maps.eu for Sentinel-2 cloudless satellite base imagery: [https://tiles.maps.eox.at/](https://tiles.maps.eox.at/) and [https://s2maps.eu/](https://s2maps.eu/)
+- MapLibre GL JS for web map rendering: [https://maplibre.org/](https://maplibre.org/)
+- PMTiles for cloud-optimised single-file tiled data delivery: [https://protomaps.com/docs/pmtiles/](https://protomaps.com/docs/pmtiles/)
 
-Useful links:
+## Repository Layout
 
-- [https://www.gebco.net/](https://www.gebco.net/)
-- [https://emodnet.ec.europa.eu/](https://emodnet.ec.europa.eu/)
-- [https://carto.com/attributions](https://carto.com/attributions)
-- [https://s2maps.eu/](https://s2maps.eu/)
-- [https://tiles.maps.eox.at/](https://tiles.maps.eox.at/)
-- [https://maplibre.org/](https://maplibre.org/)
-- [https://protomaps.com/docs/pmtiles/](https://protomaps.com/docs/pmtiles/)
+Files in [docs](docs):
 
-## Project Files
-
-- [docs/index.html](docs/index.html): page structure and UI controls.
-- [docs/app.js](docs/app.js): map logic, PMTiles loading, recolouring, and depth sampling.
-- [docs/app.css](docs/app.css): map and panel styling.
-- [docs/styles.json](docs/styles.json): palette metadata and base style definition.
+- [index.html](docs/index.html): page shell and map controls.
+- [app.js](docs/app.js): PMTiles loading, recolouring, and depth query behaviour.
+- [app.css](docs/app.css): visual styling for the map and control panel.
+- [styles.json](docs/styles.json): palette definitions and base style configuration.
