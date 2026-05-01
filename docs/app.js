@@ -16,7 +16,7 @@
   const BASE_SOURCE_ID = 'carto-dark';
   const LABEL_SOURCE_ID = 'carto-labels';
   const LABEL_LAYER_ID = 'carto-labels-layer';
-  const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-5-webp.pmtiles';
+  const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles';
 
   let activePalette = styleSelect.value;
   let rawRgbHeaderPromise;
