@@ -1,8 +1,10 @@
 # Global Bathymetry PMTiles Demo
 
-This repository hosts a web map demo for visualizing global bathymetry from hosted PMTiles.
+This repository hosts a web map demo for visualising global bathymetry from hosted PMTiles.
 
-The map app is in [docs/index.html](docs/index.html) and is intended for GitHub Pages style static hosting.
+Live map:
+
+[https://markmclaren.github.io/global-bathymetry-pmtiles/](https://markmclaren.github.io/global-bathymetry-pmtiles/)
 
 ## About This Project
 
@@ -10,11 +12,13 @@ I am a developer with a strong interest in mapping technologies.
 
 I am not a bathymetry domain expert.
 
-The goal of this project is to provide an interactive visualization workflow for exploring bathymetry data in the browser.
+The goal of this project is to provide an interactive visualisation workflow for exploring bathymetry data in the browser.
 
 ## Scope And Support
 
-This repository documents and publishes the project outputs under [docs/index.html](docs/index.html).
+This repository documents and publishes the project outputs at:
+
+[https://markmclaren.github.io/global-bathymetry-pmtiles/](https://markmclaren.github.io/global-bathymetry-pmtiles/)
 
 It is not intended to be a general support channel for configuring PMTiles with MapLibre, and I am not providing setup troubleshooting for third-party environments.
 
@@ -30,7 +34,7 @@ Direct PMTiles currently used by the app:
 
 Data provenance note:
 
-Current bathymetry content is derived from GEBCO sources, and visual styling is inspired by EMODnet bathymetry color approaches.
+Current bathymetry content is derived from GEBCO sources, and visual styling is inspired by EMODnet bathymetry colour approaches.
 
 ## Important Warning
 
@@ -38,7 +42,7 @@ NOT FOR NAVIGATION.
 
 This project and dataset are NOT intended for navigation, route planning, marine operations, legal compliance, or any safety-critical use.
 
-This project is intended for visualization, exploration, and scientific or educational research workflows.
+This project is intended for visualisation, exploration, and scientific or educational research workflows.
 
 All data and software are provided "as is" and without warranties of any kind, express or implied, including accuracy, completeness, timeliness, merchantability, or fitness for a particular purpose.
 
@@ -49,7 +53,7 @@ No endorsement is implied by GEBCO, EMODnet, CARTO, EOX, s2maps.eu, MapLibre, or
 ## Credits And Attribution
 
 - GEBCO for bathymetry data foundations.
-- EMODnet for inspiration in approach and color styling ideas.
+- EMODnet for inspiration in approach and colour styling ideas.
 - CARTO for basemap and label raster tiles.
 - EOX and s2maps.eu for Sentinel-2 cloudless satellite base imagery.
 - MapLibre GL JS for web map rendering.
@@ -68,6 +72,6 @@ Useful links:
 ## Project Files
 
 - [docs/index.html](docs/index.html): page structure and UI controls.
-- [docs/app.js](docs/app.js): map logic, PMTiles loading, recoloring, and depth sampling.
+- [docs/app.js](docs/app.js): map logic, PMTiles loading, recolouring, and depth sampling.
 - [docs/app.css](docs/app.css): map and panel styling.
 - [docs/styles.json](docs/styles.json): palette metadata and base style definition.
