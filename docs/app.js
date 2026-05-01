@@ -11,7 +11,7 @@
   const BASE_SOURCE_ID = 'carto-dark';
   const LABEL_SOURCE_ID = 'carto-labels';
   const LABEL_LAYER_ID = 'carto-labels-layer';
-  const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles';
+  const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles';
 
   // ── Palette LUT ──────────────────────────────────────────────────────────────
   // Pre-compute a 2048-entry Uint8Array LUT per palette at startup.
