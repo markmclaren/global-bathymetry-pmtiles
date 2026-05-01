@@ -9,6 +9,8 @@
   const labelsToggle = document.getElementById('labels-toggle');
 
   const pmtilesCache = new Map();
+  const recolouredTileCache = new Map();
+  const MAX_RECOLOURED_TILE_CACHE_SIZE = 512;
   const tileCanvas = document.createElement('canvas');
   const tileCtx = tileCanvas.getContext('2d', { willReadFrequently: true });
   const queryCanvas = document.createElement('canvas');
@@ -19,6 +21,7 @@
   const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles';
 
   let activePalette = styleSelect.value;
+  let appliedPalette = null;
   let rawRgbHeaderPromise;
 
   const CARTO_BASEMAPS = {
@@ -69,6 +72,14 @@
       pmtilesCache.set(url, new pmtiles.PMTiles(url));
     }
     return pmtilesCache.get(url);
+  }
+
+  function setRecolouredTileCache(key, valuePromise) {
+    recolouredTileCache.set(key, valuePromise);
+    if (recolouredTileCache.size > MAX_RECOLOURED_TILE_CACHE_SIZE) {
+      const oldestKey = recolouredTileCache.keys().next().value;
+      recolouredTileCache.delete(oldestKey);
+    }
   }
 
   function parseRawRgbUrl(url) {
@@ -243,17 +254,34 @@
   }
 
   maplibregl.addProtocol('rawrgbpmtiles', async (params) => {
-    const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
-    const archive = getPmtilesArchive(pmtilesUrl);
-    const tile = await archive.getZxy(z, x, y);
-
-    if (!tile || !tile.data) {
-      return { data: new Uint8Array() };
+    const cacheKey = params.url;
+    const cachedBitmapPromise = recolouredTileCache.get(cacheKey);
+    if (cachedBitmapPromise) {
+      return { data: await cachedBitmapPromise };
     }
 
-    const bytes = tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
-    const bitmap = await recolorTerrainRgbTile(bytes, palette);
-    return { data: bitmap };
+    const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
+    const recolourPromise = (async () => {
+      const archive = getPmtilesArchive(pmtilesUrl);
+      const tile = await archive.getZxy(z, x, y);
+
+      if (!tile || !tile.data) {
+        return new Uint8Array();
+      }
+
+      const bytes = tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
+      return recolorTerrainRgbTile(bytes, palette);
+    })();
+
+    setRecolouredTileCache(cacheKey, recolourPromise);
+
+    try {
+      const bitmap = await recolourPromise;
+      return { data: bitmap };
+    } catch (error) {
+      recolouredTileCache.delete(cacheKey);
+      throw error;
+    }
   });
 
   function addLabelSourceAndLayer(style, theme, labelsVisible) {
@@ -333,10 +361,15 @@
       return;
     }
 
+    if (appliedPalette === styleName) {
+      return;
+    }
+
     activePalette = styleName;
+    appliedPalette = styleName;
 
     src.setTiles([
-      `rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${styleName}&v=${Date.now()}`
+      `rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${styleName}`
     ]);
     compareStatus.textContent = 'Click the map to sample depth.';
   }

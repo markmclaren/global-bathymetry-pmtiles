@@ -28,10 +28,6 @@ Hosted PMTiles dataset:
 
 [https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles](https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles)
 
-Direct PMTiles currently used by the app:
-
-[https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles](https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles)
-
 Data provenance note:
 
 Current bathymetry content is derived from GEBCO sources, and visual styling is inspired by EMODnet bathymetry colour approaches.
