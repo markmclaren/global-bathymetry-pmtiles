@@ -3,7 +3,7 @@
 //
 // Receives:  { id: number, tileBytes: Uint8Array, stops: Array }
 //            tileBytes.buffer is transferred to avoid copying.
-// Sends back: { id, data: ArrayBuffer, width, height }  (buffer transferred)
+// Sends back: { id, bitmap: ImageBitmap }  (bitmap transferred)
 //          or { id, error: string } on failure.
 
 function detectMimeType(bytes) {
@@ -78,10 +78,9 @@ self.onmessage = async ({ data: { id, tileBytes, stops } }) => {
       data[i + 3] = 255;
     }
 
-    self.postMessage(
-      { id, data: img.data.buffer, width: canvas.width, height: canvas.height },
-      [img.data.buffer]
-    );
+    ctx.putImageData(img, 0, 0);
+    const bitmap = canvas.transferToImageBitmap();
+    self.postMessage({ id, bitmap }, [bitmap]);
   } catch (err) {
     self.postMessage({ id, error: err.message });
   }

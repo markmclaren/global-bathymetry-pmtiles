@@ -16,15 +16,14 @@
 
   for (let i = 0; i < WORKER_COUNT; i++) {
     const w = new Worker('tile-worker.js');
-    w.onmessage = ({ data: { id, data, width, height, error } }) => {
+    w.onmessage = ({ data: { id, bitmap, error } }) => {
       const pending = workerPending.get(id);
       if (!pending) return;
       workerPending.delete(id);
       if (error) {
         pending.reject(new Error(error));
       } else {
-        const imageData = new ImageData(new Uint8ClampedArray(data), width, height);
-        createImageBitmap(imageData).then(pending.resolve).catch(pending.reject);
+        pending.resolve(bitmap);
       }
     };
     w.onerror = (evt) => {
