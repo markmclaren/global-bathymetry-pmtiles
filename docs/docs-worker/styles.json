@@ -239,7 +239,7 @@
     "gebco-rawrgb-styled": {
       "type": "raster",
       "tiles": [
-        "rawrgbpmtiles://https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles/{z}/{x}/{y}?palette=rainbowcolour"
+        "rawrgbpmtiles://https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles/{z}/{x}/{y}?palette=rainbowcolour"
       ],
       "tileSize": 256,
       "attribution": "Bathymetry data &copy; <a href=\"https://www.gebco.net/\">GEBCO</a>"
