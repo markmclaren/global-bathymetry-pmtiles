@@ -14,6 +14,14 @@ I am not a bathymetry domain expert.
 
 The goal of this project is to provide an interactive visualisation workflow for exploring bathymetry data in the browser.
 
+### Motivation
+
+I wanted to host a 2D bathymetry visualisation with enough detail to be genuinely useful. The styling from EMODnet caught my eye but it only covers European waters — I wanted something with global coverage.
+
+The raw GEBCO source files are enormous, so they needed to be processed into a more compact, reusable web resource. The pipeline encodes depth values as Raw RGB raster tiles, compressed with WebP lossless, stored in a single PMTiles archive. The actual colouring is applied at render time using MapLibre GL JS styles, which keeps the tile data format-agnostic and makes palette changes cheap.
+
+The result is a dataset small enough to self-host (served from Hugging Face) and a viewer that runs entirely in the browser with no server-side rendering.
+
 ## Scope And Support
 
 This repository documents and publishes the project outputs at:
@@ -32,9 +40,9 @@ Data provenance note:
 
 Current bathymetry content is derived from GEBCO sources, and visual styling is inspired by EMODnet bathymetry colour approaches.
 
-## Important Warning
+## ⚠️ Important Warning
 
-NOT FOR NAVIGATION.
+**⚠️ NOT FOR NAVIGATION.**
 
 This project and dataset are NOT intended for navigation, route planning, marine operations, legal compliance, or any safety-critical use.
 
