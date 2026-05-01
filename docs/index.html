@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GEBCO RawRGB Style Demo</title>
+  <link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <link href="app.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div class="panel">
+    <div class="label">Raw RGB Palette</div>
+    <select id="style-select">
+      <optgroup label="EMODnet / GEBCO">
+        <option value="rainbowcolour">rainbowcolour</option>
+        <option value="multicolour">multicolour</option>
+        <option value="atlas_land">atlas_land</option>
+        <option value="bluegreen">bluegreen</option>
+      </optgroup>
+      <optgroup label="Project Classics">
+        <option value="classic_ocean">classic_ocean</option>
+        <option value="seafloor_heat">seafloor_heat</option>
+        <option value="monochrome_dark">monochrome_dark</option>
+        <option value="nautical_chart">nautical_chart</option>
+        <option value="deep_earth">deep_earth</option>
+      </optgroup>
+      <optgroup label="Scientific">
+        <option value="viridis">viridis</option>
+        <option value="plasma">plasma</option>
+      </optgroup>
+      <optgroup label="cmocean">
+        <option value="cmo_deep">cmo_deep</option>
+        <option value="cmo_topo">cmo_topo</option>
+        <option value="cmo_gray">cmo_gray</option>
+      </optgroup>
+    </select>
+    <div class="label">Land Theme</div>
+    <select id="land-select">
+      <option value="dark">Black land</option>
+      <option value="light">White land</option>
+      <option value="satellite">Satellite land</option>
+    </select>
+    <label class="row" for="labels-toggle"><input id="labels-toggle" type="checkbox" /> Labels on</label>
+    <div class="status" id="compare-status">Click the map to sample depth.</div>
+    <div class="hint">RawRGB recoloring uses palettes from styles.json. Land theme uses free Carto or s2maps.eu raster basemaps, and labels use Carto labels-only tiles.</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
