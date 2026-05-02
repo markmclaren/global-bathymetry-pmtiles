@@ -1,0 +1,3 @@
+*.pmtiles
+local/data/*
+!local/data/.gitkeep
