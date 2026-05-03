@@ -254,10 +254,14 @@
     container: 'map',
     style: styleDoc,
     center: [-27, 18],
-    zoom: 2.4,
-    pitch: 30,
-    bearing: 0,
+    zoom: 3,
+    maxZoom: 10,
     attributionControl: false
+  });
+
+  const zoomVal = document.getElementById('zoom-val');
+  map.on('zoom', () => {
+    zoomVal.textContent = map.getZoom().toFixed(1);
   });
 
   let attributionControl = null;

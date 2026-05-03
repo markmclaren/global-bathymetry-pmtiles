@@ -369,10 +369,16 @@
     },
     center: [-27, 18],
     zoom: 3,
+    maxZoom: 10,
     pitch: 60,
     bearing: 0,
     maxPitch: 85,
     attributionControl: false
+  });
+
+  const zoomVal = document.getElementById('zoom-val');
+  map.on('zoom', () => {
+    zoomVal.textContent = map.getZoom().toFixed(1);
   });
 
   let attributionControl = null;
