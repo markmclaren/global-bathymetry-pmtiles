@@ -47,6 +47,16 @@
       <option value="satellite">Satellite land</option>
     </select>
     <label class="row" for="labels-toggle"><input id="labels-toggle" type="checkbox" /> Labels on</label>
+
+    <div id="legend-container" style="margin-top: 10px; display: none;">
+      <div class="label" style="margin-bottom: 6px;">Depth Legend (meters)</div>
+      <div id="legend-gradient" style="height: 10px; width: 100%; border-radius: 4px; border: 1px solid rgba(166, 209, 250, 0.3);"></div>
+      <div id="legend-labels" style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 4px; color: #c4dbf2; opacity: 0.8;">
+          <span>11000m</span>
+          <span>0m</span>
+      </div>
+    </div>
+
     <div class="status" id="compare-status">Click the map to sample depth.</div>
     <div class="hint">RawRGB recoloring uses palettes from styles.json. Land and labels use free OpenFreeMap vector tiles, and satellite imagery uses Sentinel-2 cloudless by EOX.</div>
   </div>

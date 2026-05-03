@@ -47,6 +47,20 @@
       <option value="satellite">Satellite land</option>
     </select>
     <label class="row" for="labels-toggle"><input id="labels-toggle" type="checkbox" /> Labels on</label>
+    <a href="3d/" class="row" style="color: #7bc5ff; text-decoration: none; font-weight: 600; margin-top: 4px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      Switch to 3D View
+    </a>
+
+    <div id="legend-container" style="margin-top: 10px; display: none;">
+      <div class="label" style="margin-bottom: 6px;">Depth Legend (meters)</div>
+      <div id="legend-gradient" style="height: 10px; width: 100%; border-radius: 4px; border: 1px solid rgba(166, 209, 250, 0.3);"></div>
+      <div id="legend-labels" style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 4px; color: #c4dbf2; opacity: 0.8;">
+          <span>11000m</span>
+          <span>0m</span>
+      </div>
+    </div>
+
     <div class="status" id="compare-status">Click the map to sample depth.</div>
     <div class="hint">RawRGB recoloring uses palettes from styles.json. Land and labels use free OpenFreeMap vector tiles, and satellite imagery uses Sentinel-2 cloudless by EOX.</div>
   </div>

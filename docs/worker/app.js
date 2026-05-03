@@ -260,6 +260,40 @@
     refreshLandThemeAttribution();
   }
 
+  function updateLegend(paletteName) {
+    const palette = palettes[paletteName];
+    const container = document.getElementById('legend-container');
+    const gradient = document.getElementById('legend-gradient');
+    const labels = document.getElementById('legend-labels');
+    
+    if (!palette || !palette.stops || palette.stops.length === 0) {
+      container.style.display = 'none';
+      return;
+    }
+    
+    container.style.display = 'block';
+    
+    const sortedStops = [...palette.stops].sort((a, b) => a[0] - b[0]);
+    const minDepth = sortedStops[0][0];
+    const maxDepth = sortedStops[sortedStops.length - 1][0];
+    const range = maxDepth - minDepth;
+    
+    const cssGradient = sortedStops.map(stop => {
+      const percent = ((stop[0] - minDepth) / range * 100).toFixed(1);
+      const [r, g, b] = stop[1];
+      return `rgb(${r}, ${g}, ${b}) ${percent}%`;
+    }).join(', ');
+    
+    gradient.style.background = `linear-gradient(to right, ${cssGradient})`;
+    
+    const midDepth = (minDepth + maxDepth) / 2;
+    labels.innerHTML = `
+      <span>${Math.abs(minDepth).toLocaleString()}m</span>
+      <span>${Math.abs(midDepth).toLocaleString()}m</span>
+      <span>${Math.abs(maxDepth).toLocaleString()}m</span>
+    `;
+  }
+
   function setActiveStyle(styleName) {
     const src = map.getSource('gebco-rawrgb-styled');
     if (!src || !src.setTiles) return;
@@ -268,6 +302,7 @@
     appliedPalette = styleName;
     src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${styleName}`]);
     compareStatus.textContent = 'Click the map to sample depth.';
+    updateLegend(styleName);
   }
 
   labelsToggle.addEventListener('change', () => applyBasemapOptions());
