@@ -58,13 +58,13 @@ All data and software are provided "as is" and without warranties of any kind, e
 
 You are responsible for how you use this data and this software.
 
-No endorsement is implied by GEBCO, EMODnet, CARTO, EOX, s2maps.eu, MapLibre, or Hugging Face.
+No endorsement is implied by GEBCO, EMODnet, OpenFreeMap, EOX, s2maps.eu, MapLibre, or Hugging Face.
 
 ## Credits And Attribution
 
 - GEBCO for bathymetry data foundations: [https://www.gebco.net/](https://www.gebco.net/)
 - EMODnet for inspiration in approach and colour styling ideas: [https://emodnet.ec.europa.eu/](https://emodnet.ec.europa.eu/)
-- CARTO for basemap and label raster tiles: [https://carto.com/attributions](https://carto.com/attributions)
+- OpenFreeMap for open-source vector basemap and label tiles: [https://openfreemap.org/](https://openfreemap.org/)
 - EOX and s2maps.eu for Sentinel-2 cloudless satellite base imagery: [https://tiles.maps.eox.at/](https://tiles.maps.eox.at/) and [https://s2maps.eu/](https://s2maps.eu/)
 - MapLibre GL JS for web map rendering: [https://maplibre.org/](https://maplibre.org/)
 - PMTiles for cloud-optimised single-file tiled data delivery: [https://protomaps.com/docs/pmtiles/](https://protomaps.com/docs/pmtiles/)
