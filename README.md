@@ -21,10 +21,6 @@ This project demonstrates a modern, serverless approach to hosting massive geosp
 - **Cloud-Optimized Delivery**: The entire global dataset is stored in a single **PMTiles** archive hosted on Hugging Face. The browser uses HTTP Range Requests to fetch only the data needed for the current viewport, eliminating the need for a dedicated tile server.
 - **Client-Side Rendering**: Built with **MapLibre GL JS**, utilizing custom protocols to perform per-pixel recoloring and terrain extrusion directly on the user's GPU.
 
-## Project Status
-
-This is an active research project. Current tiles prioritize a compact global dataset (Zoom 0-6), with higher resolution datasets and improved processing pipelines in development.
-
 ## Data Provenance
 
 - **Bathymetry Source**: [GEBCO](https://www.gebco.net/)
