@@ -17,7 +17,7 @@ An advanced, browser-based exploration tool for global seafloor topography, feat
 
 This project demonstrates a modern, serverless approach to hosting massive geospatial datasets:
 
-- **Data Encoding**: Global GEBCO 2025 bathymetry is processed into a specialized **Raw RGB** raster format. Each pixel stores lossless depth data, allowing the client to handle the visual representation.
+- **Data Encoding**: Global GEBCO bathymetry is processed into a specialized **Raw RGB** raster format. Each pixel stores lossless depth data, allowing the client to handle the visual representation.
 - **Cloud-Optimized Delivery**: The entire global dataset is stored in a single **PMTiles** archive hosted on Hugging Face. The browser uses HTTP Range Requests to fetch only the data needed for the current viewport, eliminating the need for a dedicated tile server.
 - **Client-Side Rendering**: Built with **MapLibre GL JS**, utilizing custom protocols to perform per-pixel recoloring and terrain extrusion directly on the user's GPU.
 
@@ -27,7 +27,7 @@ This is an active research project. Current tiles prioritize a compact global da
 
 ## Data Provenance
 
-- **Bathymetry Source**: [GEBCO 2025](https://www.gebco.net/)
+- **Bathymetry Source**: [GEBCO](https://www.gebco.net/)
 - **Visual Inspiration**: [EMODnet Bathymetry](https://emodnet.ec.europa.eu/)
 - **Vector Basemaps**: [OpenFreeMap](https://openfreemap.org/)
 - **Satellite Imagery**: [Sentinel-2 Cloudless by EOX](https://s2maps.eu/)
