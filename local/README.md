@@ -1,6 +1,6 @@
 # Local Development with Docker Compose
 
-This setup allows you to run the Global Bathymetry PMTiles viewer locally, serving both the frontend and the PMTiles files using Nginx. Nginx is configured to support HTTP Range Requests, which are required for PMTiles.
+This setup allows you to run the Global Bathymetry Explorer locally, serving both the frontend and the PMTiles files using Nginx. Nginx is configured to support HTTP Range Requests, which are required for PMTiles.
 
 ## Prerequisites
 
@@ -12,10 +12,11 @@ This setup allows you to run the Global Bathymetry PMTiles viewer locally, servi
 1.  **Prepare the PMTiles file**:
     Place your `.pmtiles` file(s) in the `local/data/` directory.
     
-    The application currently expects the filename to be:
-    `gebco-2025-rawrgb-z0-6-webp.pmtiles`
+    The local environment is configured to support both the original **2025** dataset and the newer **2026** terrain-rgb dataset. You can use either of these filenames:
+    - `gebco-2025-rawrgb-z0-6-webp.pmtiles`
+    - `gebco_2026_terrain_rgb.pmtiles`
     
-    If you use a different filename, you may need to update the references in `docs/app.js` or `docs/styles.json`, or simply ensure the filename matches what is expected.
+    The Nginx configuration automatically handles the mapping so the explorer works without code changes.
 
 2.  **Start the local server**:
     From the root of the repository, run:
