@@ -1,6 +1,6 @@
 # Local Development with Docker Compose
 
-This setup allows you to run the Global Bathymetry Explorer locally, serving both the frontend and the PMTiles files using Nginx. Nginx is configured to support HTTP Range Requests, which are required for PMTiles.
+This setup allows you to run the Global Bathymetry Explorer locally, serving both the frontend and the PMTiles files using Nginx. Nginx is configured to support HTTP Range Requests, which are required for efficiently serving PMTiles files.
 
 ## Prerequisites
 
@@ -11,10 +11,13 @@ This setup allows you to run the Global Bathymetry Explorer locally, serving bot
 
 1.  **Prepare the PMTiles file**:
     Place your `.pmtiles` file(s) in the `local/data/` directory.
-    
+
+    You can download a small test file (zoom levels 0–6, approx. 200 MB) or a larger file (zoom levels 0–10, approx. 6 GB) for testing from:
+    [https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles](https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles)
+
     The local environment is configured to use the **2026** terrain-rgb dataset by default:
     - `gebco_2026_terrain_rgb.pmtiles`
-    
+
     The Nginx configuration automatically handles the mapping so the explorer works without code changes.
 
 2.  **Start the local server**:
@@ -32,5 +35,5 @@ This setup allows you to run the Global Bathymetry Explorer locally, serving bot
 
 - **Frontend**: The `docs/` folder is mounted to the Nginx container and served at the root `/`.
 - **PMTiles**: The `local/data/` folder is mounted to `/data/` in the container.
-- **Dynamic URL Replacement**: Nginx uses `sub_filter` to automatically replace any Hugging Face URLs in the frontend code with local paths (`/data/...`) on the fly. This allows the same code to work both in production (Hugging Face) and locally without manual changes.
+- **Dynamic URL Replacement**: Nginx uses `sub_filter` to automatically replace any Hugging Face URLs in the frontend code with local paths (`/data/...`) on the fly. This allows the same code to work locally and with remote datasets without code changes.
 - **Range Requests**: Nginx is configured to support byte-range requests, enabling efficient streaming of PMTiles data.
