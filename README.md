@@ -2,7 +2,8 @@
 
 An advanced, browser-based exploration tool for global seafloor topography, featuring dynamic recoloring, 3D terrain exploration, and high-performance data streaming.
 
-**Live Map:** [https://markmclaren.github.io/global-bathymetry-pmtiles/](https://markmclaren.github.io/global-bathymetry-pmtiles/)
+**Live Map:** [https://markmclaren.github.io/global-bathymetry-pmtiles/](https://markmclaren.github.io/global-bathymetry-pmtiles/)  
+**Dataset (PMTiles):** [https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles](https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles)
 
 ## Key Features
 
