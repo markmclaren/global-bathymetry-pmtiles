@@ -42,6 +42,10 @@ This project and dataset are NOT intended for navigation, route planning, marine
 
 All data and software are provided "as is" without warranties of any kind. You are responsible for how you use this data and software.
 
+## Local Development
+
+Instructions for running the explorer locally using Docker Compose can be found in the [local setup guide](local/README.md).
+
 ## Repository Layout
 
 - [/docs](docs): Main 2D visualization and data protocols.
