@@ -46,9 +46,9 @@ geospatial datasets:
 Two GEBCO grid releases are used in this project:
 
 - GEBCO Compilation Group (2025) GEBCO 2025 Grid
-  (doi:10.5285/37c52e96-24ea-67ce-e063-7086abc05f29) — smaller regional file
+  (doi:10.5285/37c52e96-24ea-67ce-e063-7086abc05f29) —zoom levels 0–6
 - GEBCO Bathymetric Compilation Group (2026) GEBCO 2026 Grid
-  (doi:10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa) — global file
+  (doi:10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa) — zoom levels 0-10
 
 The GEBCO Grid is placed in the public domain. This project does not claim
 any official status and is not endorsed by GEBCO, the IHO, or the IOC.
