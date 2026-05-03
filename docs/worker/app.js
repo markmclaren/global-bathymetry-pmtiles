@@ -14,7 +14,7 @@
   const SATELLITE_LAYER_ID = 'satellite-layer';
   const SATELLITE_SOURCE_ID = 'satellite-source';
 
-  const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles';
+  const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles';
 
   // ── Worker pool ───────────────────────────────────────────────────────────────
   const WORKER_COUNT  = Math.max(2, Math.min(navigator.hardwareConcurrency || 4, 6));

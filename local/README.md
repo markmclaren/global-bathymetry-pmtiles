@@ -12,8 +12,7 @@ This setup allows you to run the Global Bathymetry Explorer locally, serving bot
 1.  **Prepare the PMTiles file**:
     Place your `.pmtiles` file(s) in the `local/data/` directory.
     
-    The local environment is configured to support both the original **2025** dataset and the newer **2026** terrain-rgb dataset. You can use either of these filenames:
-    - `gebco-2025-rawrgb-z0-6-webp.pmtiles`
+    The local environment is configured to use the **2026** terrain-rgb dataset by default:
     - `gebco_2026_terrain_rgb.pmtiles`
     
     The Nginx configuration automatically handles the mapping so the explorer works without code changes.
