@@ -8,15 +8,15 @@
   const landSelect = document.getElementById('land-select');
   const labelsToggle = document.getElementById('labels-toggle');
 
-  const BASE_SOURCE_ID = 'carto-dark';
-  const LABEL_SOURCE_ID = 'carto-labels';
-  const LABEL_LAYER_ID = 'carto-labels-layer';
+  const VECTOR_SOURCE_ID = 'osm-vector';
+  const LABEL_LAYER_ID = 'country-labels';
+  const BOUNDARY_LAYER_ID = 'country-boundaries';
+  const SATELLITE_LAYER_ID = 'satellite-layer';
+  const SATELLITE_SOURCE_ID = 'satellite-source';
+
   const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco-2025-rawrgb-z0-6-webp.pmtiles';
 
   // ── Worker pool ───────────────────────────────────────────────────────────────
-  // Workers receive the palettes object once at init (avoids serialising stops
-  // on every postMessage). Dispatch uses a least-pending strategy so no single
-  // worker is overloaded with slow low-zoom tiles.
   const WORKER_COUNT  = Math.max(2, Math.min(navigator.hardwareConcurrency || 4, 6));
   const workerPool    = [];
   const workerLoad    = [];          // pending task count per worker
@@ -25,10 +25,7 @@
 
   for (let i = 0; i < WORKER_COUNT; i++) {
     const w = new Worker('tile-worker.js');
-
-    // Send palettes once so the worker can build LUTs and look up by name.
     w.postMessage({ type: 'init', palettes });
-
     w.onmessage = ({ data: { id, bitmap, error } }) => {
       const pending = workerPending.get(id);
       if (!pending) return;
@@ -38,7 +35,6 @@
       else pending.resolve(bitmap);
     };
     w.onerror = (evt) => console.error('Tile worker error', evt);
-
     workerPool.push(w);
     workerLoad.push(0);
   }
@@ -46,21 +42,16 @@
   function workerRecolor(tileBytes, paletteName) {
     return new Promise((resolve, reject) => {
       const id = nextMsgId++;
-
-      // Least-pending dispatch: choose the worker with the smallest queue.
       let minLoad = Infinity, workerIdx = 0;
       for (let i = 0; i < WORKER_COUNT; i++) {
         if (workerLoad[i] < minLoad) { minLoad = workerLoad[i]; workerIdx = i; }
       }
       workerLoad[workerIdx]++;
-
-      // Slice to avoid neutering the original buffer (PMTiles may reuse it).
       const copy = tileBytes.slice();
       workerPending.set(id, { resolve, reject, workerIdx });
       workerPool[workerIdx].postMessage({ type: 'recolor', id, tileBytes: copy, paletteName }, [copy.buffer]);
     });
   }
-  // ─────────────────────────────────────────────────────────────────────────────
 
   // ── LRU cache helpers ─────────────────────────────────────────────────────────
   function lruGet(cache, key) {
@@ -76,15 +67,11 @@
     cache.set(key, value);
     if (cache.size > maxSize) cache.delete(cache.keys().next().value);
   }
-  // ─────────────────────────────────────────────────────────────────────────────
 
   const pmtilesCache = new Map();
-
-  // Two-level cache: raw bytes (palette-independent) + recoloured bitmaps.
-  // Palette switches hit only the recolour cache miss — no extra network fetch.
   const rawBytesCache       = new Map();
   const recolouredTileCache = new Map();
-  const MAX_RAW_CACHE_SIZE        = 512;
+  const MAX_RAW_CACHE_SIZE       = 512;
   const MAX_RECOLOURED_CACHE_SIZE = 512;
 
   const queryCanvas = document.createElement('canvas');
@@ -92,50 +79,7 @@
 
   let activePalette  = styleSelect.value;
   let appliedPalette = null;
-  let _cachedMaxZoom = null; // constant for the page lifetime; cached after first fetch
-
-  const CARTO_BASEMAPS = {
-    dark: {
-      base: [
-        'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png'
-      ],
-      labels: [
-        'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png'
-      ]
-    },
-    light: {
-      base: [
-        'https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'
-      ],
-      labels: [
-        'https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png'
-      ]
-    },
-    satellite: {
-      base: [
-        'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg'
-      ],
-      labels: [
-        'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png'
-      ]
-    }
-  };
-
-  const LAND_THEME_ATTRIBUTION = {
-    dark: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    light: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    satellite: '&copy; <a href="https://s2maps.eu/">s2maps.eu</a> / Sentinel-2 cloudless by EOX'
-  };
+  let _cachedMaxZoom = null;
 
   function getPmtilesArchive(url) {
     if (!pmtilesCache.has(url)) pmtilesCache.set(url, new pmtiles.PMTiles(url));
@@ -146,15 +90,10 @@
     return getPmtilesArchive(url).getHeader();
   }
 
-  // Warm up the PMTiles header immediately so the first depth query is instant.
   getPmtilesHeader(RAWRGB_PMTILES_URL);
 
   function detectMimeType(bytes) {
-    if (
-      bytes.length >= 12 &&
-      bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
-      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
-    ) {
+    if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
       return 'image/webp';
     }
     if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
@@ -202,7 +141,6 @@
     return { tileX, tileY, pixelX, pixelY };
   }
 
-  // maxZoom is constant for the page lifetime — cache after first resolve.
   async function getDepthQueryMaxZoom() {
     if (_cachedMaxZoom !== null) return _cachedMaxZoom;
     const header = await getPmtilesHeader(RAWRGB_PMTILES_URL);
@@ -224,9 +162,9 @@
   }
 
   async function sampleDepthAtLngLat(map, lngLat) {
-    const archive = getPmtilesArchive(RAWRGB_PMTILES_URL);
-    const maxZoom = await getDepthQueryMaxZoom();
-    const zoom    = Math.max(0, Math.min(maxZoom, Math.floor(map.getZoom())));
+    const archive  = getPmtilesArchive(RAWRGB_PMTILES_URL);
+    const maxZoom  = await getDepthQueryMaxZoom();
+    const zoom     = Math.max(0, Math.min(maxZoom, Math.floor(map.getZoom())));
     const { tileX, tileY, pixelX, pixelY } = lngLatToTilePixel(lngLat.lng, lngLat.lat, zoom);
     const tile = await archive.getZxy(zoom, tileX, tileY);
     if (!tile || !tile.data) return null;
@@ -237,22 +175,16 @@
   }
 
   maplibregl.addProtocol('rawrgbpmtiles', async (params) => {
-    // Respect MapLibre cancellation — skip work for tiles that scrolled away.
     if (params.signal?.aborted) return { data: new Uint8Array() };
-
     const cacheKey = params.url;
-    const cached = lruGet(recolouredTileCache, cacheKey);
-    if (cached) return { data: await cached };
+    const cachedBitmapPromise = lruGet(recolouredTileCache, cacheKey);
+    if (cachedBitmapPromise) return { data: await cachedBitmapPromise };
 
     const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
-    // Raw-bytes key is palette-independent: palette switches reuse fetched data.
     const rawKey = `${z}/${x}/${y}`;
 
     const recolourPromise = (async () => {
       if (params.signal?.aborted) return new Uint8Array();
-
-      // Fetch raw bytes once; subsequent requests for the same tile (any palette)
-      // resolve from cache without a network round-trip.
       let rawPromise = lruGet(rawBytesCache, rawKey);
       if (!rawPromise) {
         rawPromise = (async () => {
@@ -263,43 +195,21 @@
         })();
         lruSet(rawBytesCache, rawKey, rawPromise, MAX_RAW_CACHE_SIZE);
       }
-
       const bytes = await rawPromise;
       if (!bytes) return new Uint8Array();
       if (params.signal?.aborted) return new Uint8Array();
-
       return workerRecolor(bytes, palette);
     })();
 
     lruSet(recolouredTileCache, cacheKey, recolourPromise, MAX_RECOLOURED_CACHE_SIZE);
-
     try {
-      return { data: await recolourPromise };
+      const bitmap = await recolourPromise;
+      return { data: bitmap };
     } catch (error) {
       recolouredTileCache.delete(cacheKey);
       throw error;
     }
   });
-
-  function addLabelSourceAndLayer(style, theme, labelsVisible) {
-    if (style.sources[BASE_SOURCE_ID]) style.sources[BASE_SOURCE_ID].attribution = '';
-    style.sources[LABEL_SOURCE_ID] = {
-      type: 'raster',
-      tiles: CARTO_BASEMAPS[theme].labels,
-      tileSize: 256,
-      minzoom: 0,
-      maxzoom: 20,
-    };
-    style.layers.splice(2, 0, {
-      id: LABEL_LAYER_ID,
-      type: 'raster',
-      source: LABEL_SOURCE_ID,
-      layout: { visibility: labelsVisible ? 'visible' : 'none' },
-      paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 }
-    });
-  }
-
-  addLabelSourceAndLayer(styleDoc, landSelect.value, labelsToggle.checked);
 
   const map = new maplibregl.Map({
     container: 'map',
@@ -315,9 +225,10 @@
 
   function refreshLandThemeAttribution() {
     if (attributionControl) map.removeControl(attributionControl);
+    const attributions = styleDoc.metadata?.attributions || {};
     attributionControl = new maplibregl.AttributionControl({
       compact: true,
-      customAttribution: LAND_THEME_ATTRIBUTION[landSelect.value] || LAND_THEME_ATTRIBUTION.dark
+      customAttribution: attributions[landSelect.value] || attributions.dark
     });
     map.addControl(attributionControl, 'bottom-right');
   }
@@ -327,13 +238,25 @@
   function applyBasemapOptions() {
     const landTheme    = landSelect.value;
     const labelsVisible = labelsToggle.checked;
-    const baseSource   = map.getSource(BASE_SOURCE_ID);
-    if (baseSource && baseSource.setTiles) baseSource.setTiles(CARTO_BASEMAPS[landTheme].base);
-    const labelSource = map.getSource(LABEL_SOURCE_ID);
-    if (labelSource && labelSource.setTiles) labelSource.setTiles(CARTO_BASEMAPS[landTheme].labels);
+    const themes       = styleDoc.metadata?.themes || {};
+    const colors       = themes[landTheme] || themes.dark;
+
+    map.setPaintProperty('background', 'background-color', colors.land);
+
+    if (map.getLayer(SATELLITE_LAYER_ID)) {
+      map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', landTheme === 'satellite' ? 'visible' : 'none');
+    }
+
+    if (map.getLayer(BOUNDARY_LAYER_ID)) {
+      map.setPaintProperty(BOUNDARY_LAYER_ID, 'line-color', colors.boundary);
+    }
+
     if (map.getLayer(LABEL_LAYER_ID)) {
       map.setLayoutProperty(LABEL_LAYER_ID, 'visibility', labelsVisible ? 'visible' : 'none');
+      map.setPaintProperty(LABEL_LAYER_ID, 'text-color', colors.label);
+      map.setPaintProperty(LABEL_LAYER_ID, 'text-halo-color', colors.halo);
     }
+
     refreshLandThemeAttribution();
   }
 
@@ -352,7 +275,6 @@
 
   map.on('load', () => {
     map.setProjection({ type: 'globe' });
-
     const depthPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'depth-popup' });
 
     map.on('click', async (event) => {

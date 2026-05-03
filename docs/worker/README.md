@@ -25,4 +25,4 @@ This build exists to compare perceived responsiveness against the current produc
 
 Because this folder now lives under `docs/`, it can be published by a standard GitHub Pages setup that serves from the `docs/` directory.
 
-If this repository is published as a project site, the test build should be reachable at `/docs-worker/` under the site root.
+If this repository is published as a project site, the test build should be reachable at `/worker/` under the site root.

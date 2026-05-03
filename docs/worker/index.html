@@ -4,11 +4,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GEBCO RawRGB Style Demo (Web Worker test)</title>
-  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <title>GEBCO RawRGB Style Demo</title>
+  <link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
   <link href="app.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pmtiles@4.3.0/dist/pmtiles.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
 </head>
 
 <body>
@@ -48,7 +48,7 @@
     </select>
     <label class="row" for="labels-toggle"><input id="labels-toggle" type="checkbox" /> Labels on</label>
     <div class="status" id="compare-status">Click the map to sample depth.</div>
-    <div class="hint">Web Worker test build — recolouring runs off the main thread using OffscreenCanvas. jsDelivr CDN for MapLibre + PMTiles JS.</div>
+    <div class="hint">RawRGB recoloring uses palettes from styles.json. Land and labels use free OpenFreeMap vector tiles, and satellite imagery uses Sentinel-2 cloudless by EOX.</div>
   </div>
 
   <script src="app.js"></script>

@@ -1,6 +1,7 @@
 {
   "version": 8,
   "name": "GEBCO RawRGB Style Demo",
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   "metadata": {
     "palettes": {
       "rainbowcolour": {
@@ -218,23 +219,49 @@
           [0, [255, 255, 253]]
         ]
       }
+    },
+    "themes": {
+      "dark": {
+        "land": "#191a1a",
+        "water": "#03101c",
+        "boundary": "#313333",
+        "label": "#ffffff",
+        "halo": "rgba(0,0,0,0.7)"
+      },
+      "light": {
+        "land": "#f8f4f0",
+        "water": "#aecfe2",
+        "boundary": "#cfcdca",
+        "label": "#000000",
+        "halo": "rgba(255,255,255,0.9)"
+      },
+      "satellite": {
+        "land": "#000000",
+        "boundary": "#ffffff",
+        "label": "#ffffff",
+        "halo": "rgba(0,0,0,0.7)"
+      }
+    },
+    "attributions": {
+      "dark": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>",
+      "light": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>",
+      "satellite": "&copy; <a href=\"https://s2maps.eu/\">s2maps.eu</a> / Sentinel-2 cloudless by EOX"
     }
   },
   "projection": {
     "type": "globe"
   },
   "sources": {
-    "carto-dark": {
+    "osm-vector": {
+      "type": "vector",
+      "url": "https://tiles.openfreemap.org/planet",
+      "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>"
+    },
+    "satellite-source": {
       "type": "raster",
-      "tiles": [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-      ],
+      "tiles": ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg"],
       "tileSize": 256,
-      "minzoom": 0,
-      "maxzoom": 20,
-      "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>"
+      "attribution": "&copy; <a href=\"https://s2maps.eu/\">s2maps.eu</a>"
     },
     "gebco-rawrgb-styled": {
       "type": "raster",
@@ -250,13 +277,16 @@
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#03101c"
+        "background-color": "#191a1a"
       }
     },
     {
-      "id": "carto-dark-layer",
+      "id": "satellite-layer",
       "type": "raster",
-      "source": "carto-dark",
+      "source": "satellite-source",
+      "layout": {
+        "visibility": "none"
+      },
       "paint": {
         "raster-opacity": 1,
         "raster-fade-duration": 0
@@ -269,6 +299,67 @@
       "paint": {
         "raster-opacity": 0.95,
         "raster-fade-duration": 0
+      }
+    },
+    {
+      "id": "country-boundaries",
+      "type": "line",
+      "source": "osm-vector",
+      "source-layer": "boundary",
+      "filter": [
+        "all",
+        ["==", "admin_level", 2],
+        ["!=", "maritime", 1]
+      ],
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "#313333",
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          1,
+          0.5,
+          5,
+          1.2,
+          12,
+          3
+        ],
+        "line-opacity": 0.8
+      }
+    },
+    {
+      "id": "country-labels",
+      "type": "symbol",
+      "source": "osm-vector",
+      "source-layer": "place",
+      "filter": ["==", "class", "country"],
+      "layout": {
+        "text-field": "{name}",
+        "text-font": ["Noto Sans Bold"],
+        "text-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          1,
+          10,
+          4,
+          16,
+          8,
+          22
+        ],
+        "text-transform": "none",
+        "text-letter-spacing": 0.1,
+        "visibility": "none",
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "#ffffff",
+        "text-halo-color": "rgba(0,0,0,0.7)",
+        "text-halo-width": 2
       }
     }
   ]
