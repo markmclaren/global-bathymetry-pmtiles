@@ -378,16 +378,27 @@
     // Use black to match the satellite theme's land value.
     const landHex = colors.land.replace('#', '');
 
-    // Update tile URL to include land color — this forces tile re-render via the
-    // rawrgbpmtiles protocol, which is the reliable way to update land color in
-    // globe+terrain mode (avoids render-to-texture cache issues with background layer).
+    // Set background to match land color — visible during the single-frame gap below.
+    map.setPaintProperty('background', 'background-color', colors.land);
+
+    // Update tile URL to bake the new land color into tile pixels.
+    // Same mechanism as palette switching: setTiles() forces MapLibre to discard
+    // cached source tiles and request new ones from our rawrgbpmtiles protocol,
+    // which renders land pixels with the new color instead of transparent.
     const src = map.getSource('gebco-raster');
     if (src && src.setTiles) {
       src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${styleSelect.value}&land=${landHex}`]);
     }
 
-    // Background color for globe edges/seams — set to match land color.
-    map.setPaintProperty('background', 'background-color', colors.land);
+    // Force the terrain render-to-texture cache to rebuild by briefly hiding
+    // the bathymetry layer. Satellite switching works reliably for the same reason:
+    // terrain only rebuilds its cached GPU texture on a LAYER VISIBILITY change.
+    // Source tile changes alone don't trigger this. The background (already set
+    // above to the theme color) covers the 1-frame gap.
+    if (map.getLayer('gebco-layer')) {
+      map.setLayoutProperty('gebco-layer', 'visibility', 'none');
+      requestAnimationFrame(() => map.setLayoutProperty('gebco-layer', 'visibility', 'visible'));
+    }
 
     if (map.getLayer(SATELLITE_LAYER_ID)) {
       map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', showSat ? 'visible' : 'none');
