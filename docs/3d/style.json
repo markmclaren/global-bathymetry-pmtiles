@@ -22,14 +22,14 @@
     },
     "terrain-source": {
       "type": "raster-dem",
-      "tiles": ["boostdempmtiles://{pmtilesUrl}/{z}/{x}/{y}"],
+      "tiles": ["boostdempmtiles://https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles/{z}/{x}/{y}"],
       "tileSize": 256,
       "encoding": "mapbox",
       "maxzoom": 10
     },
     "gebco-raster": {
       "type": "raster",
-      "tiles": ["rawrgbpmtiles://{pmtilesUrl}/{z}/{x}/{y}?palette=rainbowcolour"],
+      "tiles": ["rawrgbpmtiles://https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles/{z}/{x}/{y}?palette=rainbowcolour"],
       "tileSize": 256,
       "maxzoom": 10,
       "attribution": "Bathymetry &copy; <a href=\"https://www.gebco.net/\">GEBCO</a>"

@@ -5,15 +5,11 @@
   ]);
   if (!styleResponse.ok) throw new Error(`Failed to load styles.json: ${styleResponse.status}`);
   if (!style3dResponse.ok) throw new Error(`Failed to load style.json: ${style3dResponse.status}`);
-  const styleDoc = await styleResponse.json();
-  const style3d  = await style3dResponse.json();
-  const palettes = styleDoc.metadata?.palettes || {};
+  const styleDoc  = await styleResponse.json();
+  const mapStyle  = await style3dResponse.json();
+  const palettes  = styleDoc.metadata?.palettes || {};
 
   const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles';
-
-  // Patch placeholder URLs in the 3D style
-  const style3dStr = JSON.stringify(style3d).replace(/\{pmtilesUrl\}/g, RAWRGB_PMTILES_URL);
-  const mapStyle = JSON.parse(style3dStr);
 
   // ── Palette LUT ──────────────────────────────────────────────────────────────
   const LUT_SIZE  = 2048;
