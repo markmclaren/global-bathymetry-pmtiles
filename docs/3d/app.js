@@ -303,25 +303,27 @@
     const themes       = styleDoc.metadata?.themes || {};
     const colors       = themes[landTheme] || themes.dark;
 
-    map.setLayoutProperty('background', 'visibility', 'none');
     map.setPaintProperty('background', 'background-color', colors.land);
-    map.setLayoutProperty('background', 'visibility', 'visible');
 
     // Update atmosphere/fog for better theme consistency in 3D
-    if (landTheme === 'light') {
-      if (map.setFog) {
+    if (map.setFog) {
+      if (landTheme === 'light') {
         map.setFog({
           'color': '#f8f4f0',
           'high-color': '#e0f0ff',
           'horizon-blend': 0.02
         });
-      }
-    } else {
-      if (map.setFog) {
+      } else if (landTheme === 'dark') {
         map.setFog({
           'color': '#112233',
           'high-color': '#001122',
           'horizon-blend': 0.05
+        });
+      } else if (landTheme === 'satellite') {
+        map.setFog({
+          'color': '#000000',
+          'high-color': '#000000',
+          'horizon-blend': 0.01
         });
       }
     }
@@ -340,15 +342,8 @@
       map.setPaintProperty(LABEL_LAYER_ID, 'text-halo-color', colors.halo);
     }
 
-    console.log(`Applied theme: ${landTheme}`, colors);
-
     refreshLandThemeAttribution();
     map.triggerRepaint();
-    
-    // Tiny camera nudge to force 3D engine update
-    const b = map.getBearing();
-    map.setBearing(b + 0.000001);
-    map.setBearing(b);
   }
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
