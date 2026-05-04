@@ -145,7 +145,7 @@ select {
   box-shadow: 0 8px 24px rgba(2, 7, 15, 0.55);
   font-size: 12px;
   line-height: 1.35;
-  padding: 8px 10px;
+  padding: 10px 30px 10px 12px;
 }
 
 .maplibregl-popup.depth-popup .maplibregl-popup-tip {
