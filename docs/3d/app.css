@@ -32,6 +32,53 @@ body {
   width: min(320px, calc(100vw - 28px));
   box-sizing: border-box;
   pointer-events: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.panel-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(166, 209, 250, 0.1);
+  border: 1px solid rgba(166, 209, 250, 0.2);
+  border-radius: 8px;
+  color: #eef7ff;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  z-index: 21;
+}
+
+.panel-toggle:hover {
+  background: rgba(166, 209, 250, 0.2);
+  border-color: rgba(166, 209, 250, 0.4);
+}
+
+.panel.collapsed {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 12px;
+}
+
+.panel.collapsed > *:not(.panel-toggle) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.panel.collapsed .panel-toggle {
+  top: 9px;
+  right: 9px;
+}
+
+.panel.collapsed .panel-toggle svg {
+  transform: rotate(180deg);
 }
 
 h1 {
@@ -144,6 +191,20 @@ input[type="range"] {
   margin-top: 4px;
   color: #c4dbf2;
   opacity: 0.8;
+}
+
+.maplibregl-popup.depth-popup .maplibregl-popup-close-button {
+  color: #eef7ff;
+  font-size: 16px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+.maplibregl-popup.depth-popup .maplibregl-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0 8px 0 0;
 }
 
 .maplibregl-popup.depth-popup .maplibregl-popup-content {

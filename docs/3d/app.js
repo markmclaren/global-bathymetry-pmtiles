@@ -257,6 +257,12 @@
   const legendContainer  = document.getElementById('legend-container');
   const legendGradient   = document.getElementById('legend-gradient');
   const legendLabels     = document.getElementById('legend-labels');
+  const panel            = document.getElementById('panel');
+  const panelToggle      = document.getElementById('panel-toggle');
+
+  panelToggle.addEventListener('click', () => {
+    panel.classList.toggle('collapsed');
+  });
 
   const SATELLITE_LAYER_ID = 'satellite-layer';
   const LABEL_LAYER_ID     = 'country-labels';
@@ -384,7 +390,7 @@
     applyBasemapOptions();
     updateLegend(styleSelect.value);
 
-    const depthPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'depth-popup' });
+    const depthPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, className: 'depth-popup' });
     const statusDiv = document.getElementById('compare-status');
 
     map.on('click', async (event) => {

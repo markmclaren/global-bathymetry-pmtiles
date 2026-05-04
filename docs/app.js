@@ -7,6 +7,12 @@
   const styleSelect = document.getElementById('style-select');
   const landSelect = document.getElementById('land-select');
   const labelsToggle = document.getElementById('labels-toggle');
+  const panel = document.getElementById('panel');
+  const panelToggle = document.getElementById('panel-toggle');
+
+  panelToggle.addEventListener('click', () => {
+    panel.classList.toggle('collapsed');
+  });
 
   const VECTOR_SOURCE_ID = 'osm-vector';
   const LABEL_LAYER_ID = 'country-labels';
@@ -355,7 +361,7 @@
     applyBasemapOptions();
     updateLegend(activePalette);
     map.setProjection({ type: 'globe' });
-    const depthPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'depth-popup' });
+    const depthPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, className: 'depth-popup' });
 
     map.on('click', async (event) => {
       compareStatus.textContent = 'Sampling depth...';
