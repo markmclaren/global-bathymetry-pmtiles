@@ -32,7 +32,7 @@
       "tiles": ["rawrgbpmtiles://https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles/{z}/{x}/{y}?palette=rainbowcolour"],
       "tileSize": 256,
       "maxzoom": 10,
-      "attribution": "Bathymetry &copy; <a href=\"https://www.gebco.net/\">GEBCO</a>"
+      "attribution": "Bathymetry &copy; <a href=\"https://www.gebco.net/\">GEBCO</a> | PMTiles via <a href=\"https://isambard.ac.uk\">Isambard-AI</a>"
     }
   },
   "layers": [
