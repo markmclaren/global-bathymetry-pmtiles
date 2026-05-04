@@ -125,7 +125,7 @@ input[type="range"] {
   accent-color: #7bc5ff;
 }
 
-.back-link {
+.nav-link {
   display: inline-flex;
   align-items: center;
   color: #7bc5ff;
@@ -136,11 +136,11 @@ input[type="range"] {
   transition: color 0.2s;
 }
 
-.back-link:hover {
+.nav-link:hover {
   color: #bfe2ff;
 }
 
-.back-link svg {
+.nav-link svg {
   margin-right: 6px;
 }
 
