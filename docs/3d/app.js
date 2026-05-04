@@ -307,6 +307,25 @@
     map.setPaintProperty('background', 'background-color', colors.land);
     map.setLayoutProperty('background', 'visibility', 'visible');
 
+    // Update atmosphere/fog for better theme consistency in 3D
+    if (landTheme === 'light') {
+      if (map.setFog) {
+        map.setFog({
+          'color': '#f8f4f0',
+          'high-color': '#e0f0ff',
+          'horizon-blend': 0.02
+        });
+      }
+    } else {
+      if (map.setFog) {
+        map.setFog({
+          'color': '#112233',
+          'high-color': '#001122',
+          'horizon-blend': 0.05
+        });
+      }
+    }
+
     if (map.getLayer(SATELLITE_LAYER_ID)) {
       map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', landTheme === 'satellite' ? 'visible' : 'none');
     }
@@ -320,6 +339,8 @@
       map.setPaintProperty(LABEL_LAYER_ID, 'text-color', colors.label);
       map.setPaintProperty(LABEL_LAYER_ID, 'text-halo-color', colors.halo);
     }
+
+    console.log(`Applied theme: ${landTheme}`, colors);
 
     refreshLandThemeAttribution();
     map.triggerRepaint();
