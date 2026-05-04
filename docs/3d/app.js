@@ -1,5 +1,6 @@
 (async () => {
   const styleResponse = await fetch('../styles.json');
+  if (!styleResponse.ok) throw new Error(`Failed to load styles.json: ${styleResponse.status}`);
   const styleDoc = await styleResponse.json();
   const palettes = styleDoc.metadata?.palettes || {};
 
@@ -51,11 +52,8 @@
   const rawBytesCache = new Map();
   const MAX_RAW_CACHE_SIZE = 512;
 
-  const tileCanvas = document.createElement('canvas');
-  const tileCtx = tileCanvas.getContext('2d', { willReadFrequently: true });
   const queryCanvas = document.createElement('canvas');
   const queryCtx    = queryCanvas.getContext('2d', { willReadFrequently: true });
-  let _cachedMaxZoom = null;
 
   function getPmtilesArchive(url) {
     if (!pmtilesCache.has(url)) pmtilesCache.set(url, new pmtiles.PMTiles(url));
@@ -63,7 +61,7 @@
   }
 
   function lngLatToTilePixel(lng, lat, zoom) {
-    const n = Math.pow(2, zoom);
+    const n = 1 << zoom;
     const wrappedLng = ((((lng + 180) % 360) + 360) % 360) - 180;
     const xFloat = ((wrappedLng + 180) / 360) * n;
     const clampedLat = Math.max(-85.05112878, Math.min(85.05112878, lat));
@@ -78,25 +76,16 @@
     return { tileX, tileY, pixelX, pixelY };
   }
 
-  async function getDepthQueryMaxZoom() {
-    if (_cachedMaxZoom !== null) return _cachedMaxZoom;
-    const header = await getPmtilesHeader(RAWRGB_PMTILES_URL);
-    _cachedMaxZoom = Math.max(0, Number(header.maxZoom || 0));
-    return _cachedMaxZoom;
-  }
 
   async function decodeDepthAtPixel(tileBytes, pixelX, pixelY) {
     const blob = new Blob([tileBytes], { type: detectMimeType(tileBytes) });
     const bitmap = await createImageBitmap(blob);
-    const canvas = document.createElement('canvas');
-    canvas.width  = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(bitmap, 0, 0);
-    const px = ctx.getImageData(pixelX, pixelY, 1, 1).data;
+    queryCanvas.width  = bitmap.width;
+    queryCanvas.height = bitmap.height;
+    queryCtx.drawImage(bitmap, 0, 0);
+    const px = queryCtx.getImageData(pixelX, pixelY, 1, 1).data;
     bitmap.close();
     if (px[3] === 0) return null;
-    
     return decodeTerrainRgbElevation(px[0], px[1], px[2]);
   }
 
@@ -182,24 +171,28 @@
   const pmtilesProtocol = new pmtiles.Protocol();
   maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
 
-  maplibregl.addProtocol('rawrgbpmtiles', async (params) => {
-    if (params.signal?.aborted) return { data: new Uint8Array() };
-    const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
-    const rawKey = `raster:${pmtilesUrl}:${z}/${x}/${y}`;
-
-    let rawPromise = rawBytesCache.get(rawKey);
-    if (!rawPromise) {
-      rawPromise = (async () => {
+  function fetchRawTileBytes(pmtilesUrl, z, x, y) {
+    const key = `${pmtilesUrl}:${z}/${x}/${y}`;
+    let promise = rawBytesCache.get(key);
+    if (!promise) {
+      promise = (async () => {
         const archive = getPmtilesArchive(pmtilesUrl);
         const tile = await archive.getZxy(z, x, y);
         if (!tile || !tile.data) return null;
         return tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
       })();
-      if (rawBytesCache.size > MAX_RAW_CACHE_SIZE) rawBytesCache.delete(rawBytesCache.keys().next().value);
-      rawBytesCache.set(rawKey, rawPromise);
+      while (rawBytesCache.size >= MAX_RAW_CACHE_SIZE) {
+        rawBytesCache.delete(rawBytesCache.keys().next().value);
+      }
+      rawBytesCache.set(key, promise);
     }
+    return promise;
+  }
 
-    const bytes = await rawPromise;
+  maplibregl.addProtocol('rawrgbpmtiles', async (params) => {
+    if (params.signal?.aborted) return { data: new Uint8Array() };
+    const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
+    const bytes = await fetchRawTileBytes(pmtilesUrl, z, x, y);
     if (!bytes) return { data: new Uint8Array() };
     const bitmap = await recolorTerrainRgbTile(bytes, palette);
     return { data: bitmap };
@@ -208,21 +201,8 @@
   maplibregl.addProtocol('boostdempmtiles', async (params) => {
     if (params.signal?.aborted) return { data: new Uint8Array() };
     const { pmtilesUrl, z, x, y, mode } = parseRawRgbUrl(params.url);
-    const rawKey = `dem:${pmtilesUrl}:${z}/${x}/${y}`;
+    const bytes = await fetchRawTileBytes(pmtilesUrl, z, x, y);
 
-    let rawPromise = rawBytesCache.get(rawKey);
-    if (!rawPromise) {
-      rawPromise = (async () => {
-        const archive = getPmtilesArchive(pmtilesUrl);
-        const tile = await archive.getZxy(z, x, y);
-        if (!tile || !tile.data) return null;
-        return tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
-      })();
-      if (rawBytesCache.size > MAX_RAW_CACHE_SIZE) rawBytesCache.delete(rawBytesCache.keys().next().value);
-      rawBytesCache.set(rawKey, rawPromise);
-    }
-
-    const bytes = await rawPromise;
     if (!bytes) return { data: new Uint8Array() };
 
     const blob = new Blob([bytes], { type: detectMimeType(bytes) });
@@ -483,11 +463,12 @@
     
     // Generate simplified labels
     const midDepth = (minDepth + maxDepth) / 2;
-    labels.innerHTML = `
-      <span>${Math.abs(minDepth).toLocaleString()}m</span>
-      <span>${Math.abs(midDepth).toLocaleString()}m</span>
-      <span>${Math.abs(maxDepth).toLocaleString()}m</span>
-    `;
+    labels.textContent = '';
+    [minDepth, midDepth, maxDepth].forEach(d => {
+      const span = document.createElement('span');
+      span.textContent = `${Math.abs(d).toLocaleString()}m`;
+      labels.appendChild(span);
+    });
   }
 
   map.on('load', () => {
