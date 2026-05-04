@@ -64,6 +64,15 @@ endorsed by EMODnet.
 **Vector Basemaps**: [OpenFreeMap](https://openfreemap.org/)  
 **Satellite Imagery**: [Sentinel-2 Cloudless by EOX](https://s2maps.eu/)
 
+**Compute & Provenance**
+
+The processing of the GEBCO grids into PMTiles for this project was performed using the **Isambard-AI** supercomputing service.
+
+> "This work used the Isambard-AI service (https://isambard.ac.uk) provided by the University of Bristol and funded by UK Research and Innovation (UKRI)."
+
+**Technical Citation:**
+McIntosh-Smith, S., et al. (2024). Isambard-AI: a leadership class supercomputer optimised specifically for Artificial Intelligence. [arXiv:2410.11199](https://arxiv.org/abs/2410.11199).
+
 ---
 
 ## Important Warning
