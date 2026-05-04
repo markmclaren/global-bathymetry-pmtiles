@@ -303,7 +303,9 @@
     const themes       = styleDoc.metadata?.themes || {};
     const colors       = themes[landTheme] || themes.dark;
 
+    map.setLayoutProperty('background', 'visibility', 'none');
     map.setPaintProperty('background', 'background-color', colors.land);
+    map.setLayoutProperty('background', 'visibility', 'visible');
 
     if (map.getLayer(SATELLITE_LAYER_ID)) {
       map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', landTheme === 'satellite' ? 'visible' : 'none');
@@ -321,6 +323,11 @@
 
     refreshLandThemeAttribution();
     map.triggerRepaint();
+    
+    // Tiny camera nudge to force 3D engine update
+    const b = map.getBearing();
+    map.setBearing(b + 0.000001);
+    map.setBearing(b);
   }
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
