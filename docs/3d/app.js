@@ -239,7 +239,10 @@
     const data = img.data;
 
     for (let i = 0; i < data.length; i += 4) {
-      const elevation = decodeTerrainRgbElevation(data[i], data[i + 1], data[i + 2]);
+      let elevation = 0;
+      if (data[i + 3] !== 0) {
+        elevation = decodeTerrainRgbElevation(data[i], data[i + 1], data[i + 2]);
+      }
       
       // Handle land (clamped to 0 for bathymetry focus)
       let targetElevation = elevation > 0 ? 0 : elevation;
