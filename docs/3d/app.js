@@ -476,14 +476,7 @@
     updateLegend(styleSelect.value);
 
     const depthPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'depth-popup' });
-    const panel = document.querySelector('.panel');
-    const statusDiv = document.createElement('div');
-    statusDiv.id = 'compare-status';
-    statusDiv.style.fontSize = '11px';
-    statusDiv.style.marginTop = '8px';
-    statusDiv.style.opacity = '0.8';
-    statusDiv.textContent = 'Click the map to sample depth.';
-    panel.appendChild(statusDiv);
+    const statusDiv = document.getElementById('compare-status');
 
     map.on('click', async (event) => {
       statusDiv.textContent = 'Sampling depth...';
