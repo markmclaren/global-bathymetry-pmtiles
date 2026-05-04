@@ -74,10 +74,14 @@
   const MAX_RAW_CACHE_SIZE       = 512;
   const MAX_RECOLOURED_CACHE_SIZE = 512;
 
-  // Shared canvases — avoids per-tile DOM element creation
-  const tileCanvas  = document.createElement('canvas');
+  // Separate canvases for each protocol to avoid async race conditions:
+  // both protocols use await (suspension points) so a shared canvas would
+  // allow concurrent calls to overwrite each other's pixel data.
+  const tileCanvas  = document.createElement('canvas'); // rawrgbpmtiles
   const tileCtx     = tileCanvas.getContext('2d', { willReadFrequently: true });
-  const queryCanvas = document.createElement('canvas');
+  const boostCanvas = document.createElement('canvas'); // boostdempmtiles
+  const boostCtx    = boostCanvas.getContext('2d', { willReadFrequently: true });
+  const queryCanvas = document.createElement('canvas'); // depth sampling
   const queryCtx    = queryCanvas.getContext('2d', { willReadFrequently: true });
 
   let _cachedMaxZoom = null;
@@ -287,13 +291,13 @@
     const blob = new Blob([bytes], { type: detectMimeType(bytes) });
     const srcBitmap = await createImageBitmap(blob);
 
-    tileCanvas.width  = srcBitmap.width;
-    tileCanvas.height = srcBitmap.height;
-    tileCtx.clearRect(0, 0, tileCanvas.width, tileCanvas.height);
-    tileCtx.drawImage(srcBitmap, 0, 0);
+    boostCanvas.width  = srcBitmap.width;
+    boostCanvas.height = srcBitmap.height;
+    boostCtx.clearRect(0, 0, boostCanvas.width, boostCanvas.height);
+    boostCtx.drawImage(srcBitmap, 0, 0);
     srcBitmap.close();
 
-    const img  = tileCtx.getImageData(0, 0, tileCanvas.width, tileCanvas.height);
+    const img  = boostCtx.getImageData(0, 0, boostCanvas.width, boostCanvas.height);
     const data = img.data;
 
     for (let i = 0; i < data.length; i += 4) {
@@ -311,8 +315,8 @@
       data[i + 3] = 255;
     }
 
-    tileCtx.putImageData(img, 0, 0);
-    const bitmap = await createImageBitmap(tileCanvas);
+    boostCtx.putImageData(img, 0, 0);
+    const bitmap = await createImageBitmap(boostCanvas);
     return { data: bitmap };
   });
 
@@ -378,26 +382,15 @@
     // Use black to match the satellite theme's land value.
     const landHex = colors.land.replace('#', '');
 
-    // Set background to match land color — visible during the single-frame gap below.
+    // Set background to match land color (covers any globe edges/seams).
     map.setPaintProperty('background', 'background-color', colors.land);
 
-    // Update tile URL to bake the new land color into tile pixels.
-    // Same mechanism as palette switching: setTiles() forces MapLibre to discard
-    // cached source tiles and request new ones from our rawrgbpmtiles protocol,
-    // which renders land pixels with the new color instead of transparent.
+    // Update tile URL with new land color — identical mechanism to palette switching.
+    // setTiles() evicts cached tiles and requests new ones via rawrgbpmtiles protocol,
+    // which renders land pixels with the theme color baked in.
     const src = map.getSource('gebco-raster');
     if (src && src.setTiles) {
       src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${styleSelect.value}&land=${landHex}`]);
-    }
-
-    // Force the terrain render-to-texture cache to rebuild by briefly hiding
-    // the bathymetry layer. Satellite switching works reliably for the same reason:
-    // terrain only rebuilds its cached GPU texture on a LAYER VISIBILITY change.
-    // Source tile changes alone don't trigger this. The background (already set
-    // above to the theme color) covers the 1-frame gap.
-    if (map.getLayer('gebco-layer')) {
-      map.setLayoutProperty('gebco-layer', 'visibility', 'none');
-      requestAnimationFrame(() => map.setLayoutProperty('gebco-layer', 'visibility', 'visible'));
     }
 
     if (map.getLayer(SATELLITE_LAYER_ID)) {
