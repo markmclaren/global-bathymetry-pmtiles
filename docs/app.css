@@ -79,6 +79,14 @@ body {
   transform: rotate(180deg);
 }
 
+h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #bfe2ff;
+  padding-right: 32px;
+}
+
 .label {
   font-size: 12px;
   letter-spacing: 0.04em;
