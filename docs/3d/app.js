@@ -382,20 +382,28 @@
     // Use black to match the satellite theme's land value.
     const landHex = colors.land.replace('#', '');
 
-    // Set background to match land color (covers any globe edges/seams).
     map.setPaintProperty('background', 'background-color', colors.land);
 
-    // Update tile URL with new land color — identical mechanism to palette switching.
-    // setTiles() evicts cached tiles and requests new ones via rawrgbpmtiles protocol,
-    // which renders land pixels with the theme color baked in.
+    // Update tile URL with new land color (same mechanism as palette switching)
     const src = map.getSource('gebco-raster');
     if (src && src.setTiles) {
       src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${styleSelect.value}&land=${landHex}`]);
     }
 
+    // Force terrain render-to-texture cache rebuild.
+    // Terrain only rebuilds on a LAYER VISIBILITY change — source tile changes alone
+    // don't trigger it. We briefly show the satellite layer (it has no cached tiles
+    // for the current view so renders transparent for one frame), then hide it.
+    // The visibility change forces terrain to rebuild with the new land-coloured tiles.
     if (map.getLayer(SATELLITE_LAYER_ID)) {
-      map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', showSat ? 'visible' : 'none');
+      if (showSat) {
+        map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', 'visible');
+      } else {
+        map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', 'visible');
+        requestAnimationFrame(() => map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', 'none'));
+      }
     }
+
     if (map.getLayer(BOUNDARY_LAYER_ID)) {
       map.setPaintProperty(BOUNDARY_LAYER_ID, 'line-color', colors.boundary);
     }
