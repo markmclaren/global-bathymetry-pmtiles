@@ -81,7 +81,6 @@
     return { tileX, tileY, pixelX, pixelY };
   }
 
-
   async function decodeDepthAtPixel(tileBytes, pixelX, pixelY) {
     const blob = new Blob([tileBytes], { type: detectMimeType(tileBytes) });
     const bitmap = await createImageBitmap(blob);
@@ -255,6 +254,9 @@
   const landSelect       = document.getElementById('land-select');
   const labelsToggle     = document.getElementById('labels-toggle');
   const depthModeSelect  = document.getElementById('depth-mode-select');
+  const legendContainer  = document.getElementById('legend-container');
+  const legendGradient   = document.getElementById('legend-gradient');
+  const legendLabels     = document.getElementById('legend-labels');
 
   const SATELLITE_LAYER_ID = 'satellite-layer';
   const LABEL_LAYER_ID     = 'country-labels';
@@ -346,16 +348,13 @@
 
   function updateLegend(paletteName) {
     const palette = palettes[paletteName];
-    const container = document.getElementById('legend-container');
-    const gradient = document.getElementById('legend-gradient');
-    const labels = document.getElementById('legend-labels');
     
     if (!palette || !palette.stops || palette.stops.length === 0) {
-      container.style.display = 'none';
+      legendContainer.style.display = 'none';
       return;
     }
     
-    container.style.display = 'block';
+    legendContainer.style.display = 'block';
     
     // Sort stops to ensure gradient is correct
     const sortedStops = [...palette.stops].sort((a, b) => a[0] - b[0]);
@@ -369,15 +368,15 @@
       return `rgb(${r}, ${g}, ${b}) ${percent}%`;
     }).join(', ');
     
-    gradient.style.background = `linear-gradient(to right, ${cssGradient})`;
+    legendGradient.style.background = `linear-gradient(to right, ${cssGradient})`;
     
     // Generate simplified labels
     const midDepth = (minDepth + maxDepth) / 2;
-    labels.textContent = '';
+    legendLabels.textContent = '';
     [minDepth, midDepth, maxDepth].forEach(d => {
       const span = document.createElement('span');
       span.textContent = `${Math.abs(d).toLocaleString()}m`;
-      labels.appendChild(span);
+      legendLabels.appendChild(span);
     });
   }
 
@@ -403,7 +402,7 @@
           : `${elevation.toFixed(1)} m above sea level`;
         depthPopup
           .setLngLat(event.lngLat)
-          .setHTML(`<strong>Depth:</strong> ${depthLabel}<br><span style="opacity:0.8">Sample zoom z${zoom}</span>`)
+          .setHTML(`<strong>Depth:</strong> ${depthLabel}<br><span class="depth-zoom">Sample zoom z${zoom}</span>`)
           .addTo(map);
         statusDiv.textContent = 'Click the map to sample depth.';
       } catch (error) {

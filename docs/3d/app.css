@@ -167,3 +167,7 @@ input[type="range"] {
   color: #bfe2ff;
   font-weight: 700;
 }
+
+.maplibregl-popup.depth-popup .depth-zoom {
+  opacity: 0.8;
+}
