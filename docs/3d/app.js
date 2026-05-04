@@ -102,7 +102,7 @@
 
   async function sampleDepthAtLngLat(map, lngLat) {
     const archive  = getPmtilesArchive(RAWRGB_PMTILES_URL);
-    const maxZoom  = 6;
+    const maxZoom  = 10;
     const zoom     = Math.max(0, Math.min(maxZoom, Math.floor(map.getZoom())));
     const { tileX, tileY, pixelX, pixelY } = lngLatToTilePixel(lngLat.lng, lngLat.lat, zoom);
     const tile = await archive.getZxy(zoom, tileX, tileY);
@@ -304,13 +304,13 @@
           "tiles": [`boostdempmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}`],
           "tileSize": 256,
           "encoding": "mapbox",
-          "maxzoom": 6
+          "maxzoom": 10
         },
         "gebco-raster": {
           "type": "raster",
           "tiles": [`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=rainbowcolour`],
           "tileSize": 256,
-          "maxzoom": 6,
+          "maxzoom": 10,
           "attribution": "Bathymetry &copy; <a href=\"https://www.gebco.net/\">GEBCO</a>"
         }
       },
