@@ -1,0 +1,96 @@
+{
+  "version": 8,
+  "name": "GEBCO 3D Style",
+  "projection": { "type": "globe" },
+  "atmosphere": {
+    "color": "#112233",
+    "high-color": "#001122",
+    "horizon-blend": 0.05
+  },
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "osm-vector": {
+      "type": "vector",
+      "url": "https://tiles.openfreemap.org/planet",
+      "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>"
+    },
+    "satellite-source": {
+      "type": "raster",
+      "tiles": ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg"],
+      "tileSize": 256,
+      "attribution": "&copy; <a href=\"https://s2maps.eu/\">s2maps.eu</a>"
+    },
+    "terrain-source": {
+      "type": "raster-dem",
+      "tiles": ["boostdempmtiles://{pmtilesUrl}/{z}/{x}/{y}"],
+      "tileSize": 256,
+      "encoding": "mapbox",
+      "maxzoom": 10
+    },
+    "gebco-raster": {
+      "type": "raster",
+      "tiles": ["rawrgbpmtiles://{pmtilesUrl}/{z}/{x}/{y}?palette=rainbowcolour"],
+      "tileSize": 256,
+      "maxzoom": 10,
+      "attribution": "Bathymetry &copy; <a href=\"https://www.gebco.net/\">GEBCO</a>"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": { "background-color": "#191a1a" }
+    },
+    {
+      "id": "satellite-layer",
+      "type": "raster",
+      "source": "satellite-source",
+      "layout": { "visibility": "none" },
+      "paint": { "raster-opacity": 1, "raster-fade-duration": 0 }
+    },
+    {
+      "id": "gebco-layer",
+      "type": "raster",
+      "source": "gebco-raster",
+      "paint": {
+        "raster-opacity": 0.95,
+        "raster-fade-duration": 0
+      }
+    },
+    {
+      "id": "country-boundaries",
+      "type": "line",
+      "source": "osm-vector",
+      "source-layer": "boundary",
+      "filter": ["all", ["==", "admin_level", 2], ["!=", "maritime", 1]],
+      "paint": {
+        "line-color": "#313333",
+        "line-width": 1,
+        "line-opacity": 0.5
+      }
+    },
+    {
+      "id": "country-labels",
+      "type": "symbol",
+      "source": "osm-vector",
+      "source-layer": "place",
+      "filter": ["==", "class", "country"],
+      "layout": {
+        "text-field": "{name}",
+        "text-font": ["Noto Sans Bold"],
+        "text-size": 12,
+        "text-transform": "none",
+        "visibility": "none"
+      },
+      "paint": {
+        "text-color": "#ffffff",
+        "text-halo-color": "rgba(0,0,0,0.7)",
+        "text-halo-width": 2
+      }
+    }
+  ],
+  "terrain": {
+    "source": "terrain-source",
+    "exaggeration": 15
+  }
+}

@@ -1,10 +1,19 @@
 (async () => {
-  const styleResponse = await fetch('../styles.json');
+  const [styleResponse, style3dResponse] = await Promise.all([
+    fetch('../styles.json'),
+    fetch('style.json')
+  ]);
   if (!styleResponse.ok) throw new Error(`Failed to load styles.json: ${styleResponse.status}`);
+  if (!style3dResponse.ok) throw new Error(`Failed to load style.json: ${style3dResponse.status}`);
   const styleDoc = await styleResponse.json();
+  const style3d  = await style3dResponse.json();
   const palettes = styleDoc.metadata?.palettes || {};
 
   const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles';
+
+  // Patch placeholder URLs in the 3D style
+  const style3dStr = JSON.stringify(style3d).replace(/\{pmtilesUrl\}/g, RAWRGB_PMTILES_URL);
+  const mapStyle = JSON.parse(style3dStr);
 
   // ── Palette LUT ──────────────────────────────────────────────────────────────
   const LUT_SIZE  = 2048;
@@ -257,102 +266,7 @@
 
   const map = new maplibregl.Map({
     container: 'map',
-    style: {
-      "version": 8,
-      "name": "GEBCO 3D Style",
-      "projection": { "type": "globe" },
-      "atmosphere": {
-        "color": "#112233",
-        "high-color": "#001122",
-        "horizon-blend": 0.05
-      },
-      "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
-      "sources": {
-        "osm-vector": {
-          "type": "vector",
-          "url": "https://tiles.openfreemap.org/planet",
-          "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>"
-        },
-        "satellite-source": {
-          "type": "raster",
-          "tiles": ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg"],
-          "tileSize": 256,
-          "attribution": "&copy; <a href=\"https://s2maps.eu/\">s2maps.eu</a>"
-        },
-        "terrain-source": {
-          "type": "raster-dem",
-          "tiles": [`boostdempmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}`],
-          "tileSize": 256,
-          "encoding": "mapbox",
-          "maxzoom": 10
-        },
-        "gebco-raster": {
-          "type": "raster",
-          "tiles": [`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=rainbowcolour`],
-          "tileSize": 256,
-          "maxzoom": 10,
-          "attribution": "Bathymetry &copy; <a href=\"https://www.gebco.net/\">GEBCO</a>"
-        }
-      },
-      "layers": [
-        {
-          "id": "background",
-          "type": "background",
-          "paint": { "background-color": "#191a1a" }
-        },
-        {
-          "id": SATELLITE_LAYER_ID,
-          "type": "raster",
-          "source": "satellite-source",
-          "layout": { "visibility": "none" },
-          "paint": { "raster-opacity": 1, "raster-fade-duration": 0 }
-        },
-        {
-          "id": "gebco-layer",
-          "type": "raster",
-          "source": "gebco-raster",
-          "paint": {
-            "raster-opacity": 0.95,
-            "raster-fade-duration": 0
-          }
-        },
-        {
-          "id": BOUNDARY_LAYER_ID,
-          "type": "line",
-          "source": "osm-vector",
-          "source-layer": "boundary",
-          "filter": ["all", ["==", "admin_level", 2], ["!=", "maritime", 1]],
-          "paint": {
-            "line-color": "#313333",
-            "line-width": 1,
-            "line-opacity": 0.5
-          }
-        },
-        {
-          "id": LABEL_LAYER_ID,
-          "type": "symbol",
-          "source": "osm-vector",
-          "source-layer": "place",
-          "filter": ["==", "class", "country"],
-          "layout": {
-            "text-field": "{name}",
-            "text-font": ["Noto Sans Bold"],
-            "text-size": 12,
-            "text-transform": "none",
-            "visibility": "none"
-          },
-          "paint": {
-            "text-color": "#ffffff",
-            "text-halo-color": "rgba(0,0,0,0.7)",
-            "text-halo-width": 2
-          }
-        }
-      ],
-      "terrain": {
-        "source": "terrain-source",
-        "exaggeration": 15
-      }
-    },
+    style: mapStyle,
     center: [-27, 18],
     zoom: 3,
     maxZoom: 10,
