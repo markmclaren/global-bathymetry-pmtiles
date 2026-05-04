@@ -275,9 +275,9 @@
       }
     },
     "attributions": {
-      "dark": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> | PMTiles by <a href=\"https://isambard.ac.uk\">Isambard-AI</a>",
-      "light": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> | PMTiles by <a href=\"https://isambard.ac.uk\">Isambard-AI</a>",
-      "satellite": "&copy; <a href=\"https://s2maps.eu/\">s2maps.eu</a> / Sentinel-2 cloudless by EOX | PMTiles by <a href=\"https://isambard.ac.uk\">Isambard-AI</a>"
+      "dark": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>",
+      "light": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>",
+      "satellite": "&copy; <a href=\"https://s2maps.eu/\">s2maps.eu</a> / Sentinel-2 cloudless by EOX"
     }
   },
   "projection": {
@@ -301,7 +301,7 @@
         "rawrgbpmtiles://https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles/{z}/{x}/{y}?palette=rainbowcolour"
       ],
       "tileSize": 256,
-      "attribution": "Bathymetry data &copy; <a href=\"https://www.gebco.net/\">GEBCO</a> | PMTiles by <a href=\"https://isambard.ac.uk\">Isambard-AI</a>"
+      "attribution": "Bathymetry data &copy; <a href=\"https://www.gebco.net/\">GEBCO</a> | PMTiles via <a href=\"https://isambard.ac.uk\">Isambard-AI</a>"
     }
   },
   "layers": [
