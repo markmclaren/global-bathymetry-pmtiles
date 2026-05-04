@@ -320,6 +320,7 @@
     }
 
     refreshLandThemeAttribution();
+    map.triggerRepaint();
   }
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right');

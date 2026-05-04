@@ -268,6 +268,7 @@
     }
 
     refreshLandThemeAttribution();
+    map.triggerRepaint();
   }
 
   function updateLegend(paletteName) {
