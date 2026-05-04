@@ -52,17 +52,57 @@
     paletteLuts[name] = buildLut(pal.stops || []);
   }
 
-  // ── Cache & Sampling helpers ───────────────────────────────────────────────
-  const pmtilesCache = new Map();
-  const rawBytesCache = new Map();
-  const MAX_RAW_CACHE_SIZE = 512;
+  // ── LRU cache helpers ─────────────────────────────────────────────────────────
+  function lruGet(cache, key) {
+    if (!cache.has(key)) return undefined;
+    const v = cache.get(key);
+    cache.delete(key);
+    cache.set(key, v);
+    return v;
+  }
 
+  function lruSet(cache, key, value, maxSize) {
+    if (cache.has(key)) cache.delete(key);
+    cache.set(key, value);
+    if (cache.size > maxSize) cache.delete(cache.keys().next().value);
+  }
+
+  // ── Cache & Sampling helpers ───────────────────────────────────────────────
+  const pmtilesCache        = new Map();
+  const rawBytesCache       = new Map();
+  const recolouredTileCache = new Map();
+  const MAX_RAW_CACHE_SIZE       = 512;
+  const MAX_RECOLOURED_CACHE_SIZE = 512;
+
+  // Shared canvases — avoids per-tile DOM element creation
+  const tileCanvas  = document.createElement('canvas');
+  const tileCtx     = tileCanvas.getContext('2d', { willReadFrequently: true });
   const queryCanvas = document.createElement('canvas');
   const queryCtx    = queryCanvas.getContext('2d', { willReadFrequently: true });
+
+  let _cachedMaxZoom = null;
 
   function getPmtilesArchive(url) {
     if (!pmtilesCache.has(url)) pmtilesCache.set(url, new pmtiles.PMTiles(url));
     return pmtilesCache.get(url);
+  }
+
+  function getPmtilesHeader(url) {
+    return getPmtilesArchive(url).getHeader();
+  }
+
+  // Warm up the PMTiles header cache
+  getPmtilesHeader(RAWRGB_PMTILES_URL);
+
+  function detectMimeType(bytes) {
+    if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp';
+    if (bytes.length >= 8  && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+    if (bytes.length >= 3  && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+    return 'application/octet-stream';
+  }
+
+  function decodeTerrainRgbElevation(r, g, b) {
+    return (r * 65536 + g * 256 + b) * 0.1 - 10000;
   }
 
   function lngLatToTilePixel(lng, lat, zoom) {
@@ -81,11 +121,19 @@
     return { tileX, tileY, pixelX, pixelY };
   }
 
+  async function getDepthQueryMaxZoom() {
+    if (_cachedMaxZoom !== null) return _cachedMaxZoom;
+    const header = await getPmtilesHeader(RAWRGB_PMTILES_URL);
+    _cachedMaxZoom = Math.max(0, Number(header.maxZoom || 0));
+    return _cachedMaxZoom;
+  }
+
   async function decodeDepthAtPixel(tileBytes, pixelX, pixelY) {
     const blob = new Blob([tileBytes], { type: detectMimeType(tileBytes) });
     const bitmap = await createImageBitmap(blob);
     queryCanvas.width  = bitmap.width;
     queryCanvas.height = bitmap.height;
+    queryCtx.clearRect(0, 0, queryCanvas.width, queryCanvas.height); // prevent pixel bleed
     queryCtx.drawImage(bitmap, 0, 0);
     const px = queryCtx.getImageData(pixelX, pixelY, 1, 1).data;
     bitmap.close();
@@ -95,7 +143,7 @@
 
   async function sampleDepthAtLngLat(map, lngLat) {
     const archive  = getPmtilesArchive(RAWRGB_PMTILES_URL);
-    const maxZoom  = 10;
+    const maxZoom  = await getDepthQueryMaxZoom(); // dynamic, not hard-coded
     const zoom     = Math.max(0, Math.min(maxZoom, Math.floor(map.getZoom())));
     const { tileX, tileY, pixelX, pixelY } = lngLatToTilePixel(lngLat.lng, lngLat.lat, zoom);
     const tile = await archive.getZxy(zoom, tileX, tileY);
@@ -106,32 +154,21 @@
     return { elevation, zoom };
   }
 
-  // ── Protocols ───────────────────────────────────────────────────────────────
-
-  function detectMimeType(bytes) {
-    if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp';
-    if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
-    if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
-    return 'application/octet-stream';
-  }
-
-  function decodeTerrainRgbElevation(r, g, b) {
-    return (r * 65536 + g * 256 + b) * 0.1 - 10000;
-  }
+  // ── Tile recolouring ─────────────────────────────────────────────────────────
 
   async function recolorTerrainRgbTile(tileBytes, paletteName) {
     const lut = paletteLuts[paletteName] || paletteLuts.rainbowcolour;
     const blob = new Blob([tileBytes], { type: detectMimeType(tileBytes) });
     const srcBitmap = await createImageBitmap(blob);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = srcBitmap.width;
-    canvas.height = srcBitmap.height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(srcBitmap, 0, 0);
+
+    // Reuse shared canvas — no per-tile DOM allocation
+    tileCanvas.width  = srcBitmap.width;
+    tileCanvas.height = srcBitmap.height;
+    tileCtx.clearRect(0, 0, tileCanvas.width, tileCanvas.height);
+    tileCtx.drawImage(srcBitmap, 0, 0);
     srcBitmap.close();
 
-    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const img  = tileCtx.getImageData(0, 0, tileCanvas.width, tileCanvas.height);
     const data = img.data;
     const lutMax = LUT_SIZE - 1;
 
@@ -143,15 +180,15 @@
         continue;
       }
       const idx = ((elevation - LUT_MIN) / LUT_RANGE * lutMax + 0.5) | 0;
-      const li = (idx < 0 ? 0 : idx > lutMax ? lutMax : idx) * 3;
-      data[i] = lut[li];
+      const li  = (idx < 0 ? 0 : idx > lutMax ? lutMax : idx) * 3;
+      data[i]     = lut[li];
       data[i + 1] = lut[li + 1];
       data[i + 2] = lut[li + 2];
       data[i + 3] = 255;
     }
 
-    ctx.putImageData(img, 0, 0);
-    return createImageBitmap(canvas);
+    tileCtx.putImageData(img, 0, 0);
+    return createImageBitmap(tileCanvas);
   }
 
   function parseRawRgbUrl(url) {
@@ -171,55 +208,78 @@
     };
   }
 
-  // Register Protocols
+  // ── Protocols ───────────────────────────────────────────────────────────────
+
   const pmtilesProtocol = new pmtiles.Protocol();
   maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
 
-  function fetchRawTileBytes(pmtilesUrl, z, x, y) {
-    const key = `${pmtilesUrl}:${z}/${x}/${y}`;
-    let promise = rawBytesCache.get(key);
-    if (!promise) {
-      promise = (async () => {
-        const archive = getPmtilesArchive(pmtilesUrl);
-        const tile = await archive.getZxy(z, x, y);
-        if (!tile || !tile.data) return null;
-        return tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
-      })();
-      while (rawBytesCache.size >= MAX_RAW_CACHE_SIZE) {
-        rawBytesCache.delete(rawBytesCache.keys().next().value);
-      }
-      rawBytesCache.set(key, promise);
-    }
-    return promise;
-  }
-
   maplibregl.addProtocol('rawrgbpmtiles', async (params) => {
     if (params.signal?.aborted) return { data: new Uint8Array() };
+
+    // Check LRU recoloured cache first
+    const cacheKey = params.url;
+    const cachedBitmapPromise = lruGet(recolouredTileCache, cacheKey);
+    if (cachedBitmapPromise) return { data: await cachedBitmapPromise };
+
     const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
-    const bytes = await fetchRawTileBytes(pmtilesUrl, z, x, y);
-    if (!bytes) return { data: new Uint8Array() };
-    const bitmap = await recolorTerrainRgbTile(bytes, palette);
-    return { data: bitmap };
+    const rawKey = `${pmtilesUrl}:${z}/${x}/${y}`;
+
+    const recolourPromise = (async () => {
+      if (params.signal?.aborted) return new Uint8Array();
+      let rawPromise = lruGet(rawBytesCache, rawKey);
+      if (!rawPromise) {
+        rawPromise = (async () => {
+          const archive = getPmtilesArchive(pmtilesUrl);
+          const tile = await archive.getZxy(z, x, y);
+          if (!tile || !tile.data) return null;
+          return tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
+        })();
+        lruSet(rawBytesCache, rawKey, rawPromise, MAX_RAW_CACHE_SIZE);
+      }
+      const bytes = await rawPromise;
+      if (!bytes) return new Uint8Array();
+      if (params.signal?.aborted) return new Uint8Array();
+      return recolorTerrainRgbTile(bytes, palette);
+    })();
+
+    lruSet(recolouredTileCache, cacheKey, recolourPromise, MAX_RECOLOURED_CACHE_SIZE);
+    try {
+      const bitmap = await recolourPromise;
+      return { data: bitmap };
+    } catch (error) {
+      recolouredTileCache.delete(cacheKey);
+      throw error;
+    }
   });
 
   maplibregl.addProtocol('boostdempmtiles', async (params) => {
     if (params.signal?.aborted) return { data: new Uint8Array() };
     const { pmtilesUrl, z, x, y, mode } = parseRawRgbUrl(params.url);
-    const bytes = await fetchRawTileBytes(pmtilesUrl, z, x, y);
 
+    let rawPromise = lruGet(rawBytesCache, `${pmtilesUrl}:${z}/${x}/${y}`);
+    if (!rawPromise) {
+      rawPromise = (async () => {
+        const archive = getPmtilesArchive(pmtilesUrl);
+        const tile = await archive.getZxy(z, x, y);
+        if (!tile || !tile.data) return null;
+        return tile.data instanceof Uint8Array ? tile.data : new Uint8Array(tile.data);
+      })();
+      lruSet(rawBytesCache, `${pmtilesUrl}:${z}/${x}/${y}`, rawPromise, MAX_RAW_CACHE_SIZE);
+    }
+
+    const bytes = await rawPromise;
     if (!bytes) return { data: new Uint8Array() };
 
     const blob = new Blob([bytes], { type: detectMimeType(bytes) });
     const srcBitmap = await createImageBitmap(blob);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = srcBitmap.width;
-    canvas.height = srcBitmap.height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(srcBitmap, 0, 0);
+
+    tileCanvas.width  = srcBitmap.width;
+    tileCanvas.height = srcBitmap.height;
+    tileCtx.clearRect(0, 0, tileCanvas.width, tileCanvas.height);
+    tileCtx.drawImage(srcBitmap, 0, 0);
     srcBitmap.close();
 
-    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const img  = tileCtx.getImageData(0, 0, tileCanvas.width, tileCanvas.height);
     const data = img.data;
 
     for (let i = 0; i < data.length; i += 4) {
@@ -227,38 +287,32 @@
       if (data[i + 3] !== 0) {
         elevation = decodeTerrainRgbElevation(data[i], data[i + 1], data[i + 2]);
       }
-      
-      // Handle land (clamped to 0 for bathymetry focus)
       let targetElevation = elevation > 0 ? 0 : elevation;
+      if (mode === 'height') targetElevation = -targetElevation;
 
-      // Depth as Height (Inverted)
-      if (mode === 'height') {
-        targetElevation = -targetElevation;
-      }
-      
-      // Re-encode to Mapbox Terrain-RGB
       const newRaw = Math.max(0, Math.round((targetElevation + 10000) * 10));
-      
-      data[i] = (newRaw >> 16) & 0xFF;
-      data[i + 1] = (newRaw >> 8) & 0xFF;
-      data[i + 2] = newRaw & 0xFF;
+      data[i]     = (newRaw >> 16) & 0xFF;
+      data[i + 1] = (newRaw >> 8)  & 0xFF;
+      data[i + 2] =  newRaw        & 0xFF;
       data[i + 3] = 255;
     }
 
-    ctx.putImageData(img, 0, 0);
-    const bitmap = await createImageBitmap(canvas);
+    tileCtx.putImageData(img, 0, 0);
+    const bitmap = await createImageBitmap(tileCanvas);
     return { data: bitmap };
   });
 
-  const styleSelect      = document.getElementById('style-select');
-  const landSelect       = document.getElementById('land-select');
-  const labelsToggle     = document.getElementById('labels-toggle');
-  const depthModeSelect  = document.getElementById('depth-mode-select');
-  const legendContainer  = document.getElementById('legend-container');
-  const legendGradient   = document.getElementById('legend-gradient');
-  const legendLabels     = document.getElementById('legend-labels');
-  const panel            = document.getElementById('panel');
-  const panelToggle      = document.getElementById('panel-toggle');
+  // ── UI elements ──────────────────────────────────────────────────────────────
+
+  const styleSelect     = document.getElementById('style-select');
+  const landSelect      = document.getElementById('land-select');
+  const labelsToggle    = document.getElementById('labels-toggle');
+  const depthModeSelect = document.getElementById('depth-mode-select');
+  const legendContainer = document.getElementById('legend-container');
+  const legendGradient  = document.getElementById('legend-gradient');
+  const legendLabels    = document.getElementById('legend-labels');
+  const panel           = document.getElementById('panel');
+  const panelToggle     = document.getElementById('panel-toggle');
 
   panelToggle.addEventListener('click', () => {
     panel.classList.toggle('collapsed');
@@ -298,6 +352,9 @@
   }
 
   function applyBasemapOptions() {
+    // Guard: do nothing if the map style isn't loaded yet
+    if (!map.loaded()) return;
+
     const landTheme    = landSelect.value;
     const labelsVisible = labelsToggle.checked;
     const themes       = styleDoc.metadata?.themes || {};
@@ -320,64 +377,32 @@
     }
 
     refreshLandThemeAttribution();
-    map.triggerRepaint();
+    // No triggerRepaint() — setPaintProperty already schedules a repaint
   }
-
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
-  styleSelect.addEventListener('change', (e) => {
-    const palette = e.target.value;
-    const src = map.getSource('gebco-raster');
-    if (src && src.setTiles) {
-      src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${palette}`]);
-    }
-    updateLegend(palette);
-  });
-
-  landSelect.addEventListener('change', () => applyBasemapOptions());
-  labelsToggle.addEventListener('change', () => applyBasemapOptions());
-
-  depthModeSelect.addEventListener('change', () => {
-    const mode = depthModeSelect.value;
-    const src = map.getSource('terrain-source');
-    if (src && src.setTiles) {
-      src.setTiles([`boostdempmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?mode=${mode}`]);
-    }
-  });
-
-  const exagSlider = document.getElementById('exag-slider');
-  const exagVal    = document.getElementById('exag-val');
-  exagSlider.addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    exagVal.textContent = val;
-    map.setTerrain({ source: 'terrain-source', exaggeration: val });
-  });
 
   function updateLegend(paletteName) {
     const palette = palettes[paletteName];
-    
+
     if (!palette || !palette.stops || palette.stops.length === 0) {
       legendContainer.style.display = 'none';
       return;
     }
-    
+
     legendContainer.style.display = 'block';
-    
-    // Sort stops to ensure gradient is correct
+
     const sortedStops = [...palette.stops].sort((a, b) => a[0] - b[0]);
     const minDepth = sortedStops[0][0];
     const maxDepth = sortedStops[sortedStops.length - 1][0];
     const range = maxDepth - minDepth;
-    
+
     const cssGradient = sortedStops.map(stop => {
       const percent = ((stop[0] - minDepth) / range * 100).toFixed(1);
       const [r, g, b] = stop[1];
       return `rgb(${r}, ${g}, ${b}) ${percent}%`;
     }).join(', ');
-    
+
     legendGradient.style.background = `linear-gradient(to right, ${cssGradient})`;
-    
-    // Generate simplified labels
+
     const midDepth = (minDepth + maxDepth) / 2;
     legendLabels.textContent = '';
     [minDepth, midDepth, maxDepth].forEach(d => {
@@ -387,12 +412,43 @@
     });
   }
 
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+  const exagSlider = document.getElementById('exag-slider');
+  const exagVal    = document.getElementById('exag-val');
+  exagSlider.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    exagVal.textContent = val;
+    map.setTerrain({ source: 'terrain-source', exaggeration: val });
+  });
+
   map.on('load', () => {
     applyBasemapOptions();
     updateLegend(styleSelect.value);
 
+    // Register interactive listeners inside load so map is guaranteed ready
+    landSelect.addEventListener('change', () => applyBasemapOptions());
+    labelsToggle.addEventListener('change', () => applyBasemapOptions());
+
+    styleSelect.addEventListener('change', (e) => {
+      const palette = e.target.value;
+      const src = map.getSource('gebco-raster');
+      if (src && src.setTiles) {
+        src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${palette}`]);
+      }
+      updateLegend(palette);
+    });
+
+    depthModeSelect.addEventListener('change', () => {
+      const mode = depthModeSelect.value;
+      const src = map.getSource('terrain-source');
+      if (src && src.setTiles) {
+        src.setTiles([`boostdempmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?mode=${mode}`]);
+      }
+    });
+
     const depthPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, className: 'depth-popup' });
-    const statusDiv = document.getElementById('compare-status');
+    const statusDiv  = document.getElementById('compare-status');
 
     map.on('click', async (event) => {
       statusDiv.textContent = 'Sampling depth...';
