@@ -97,8 +97,7 @@
     bitmap.close();
     if (px[3] === 0) return null;
     
-    const rawDepthValue = px[0] * 65536 + px[1] * 256 + px[2];
-    return -rawDepthValue * 0.1;
+    return decodeTerrainRgbElevation(px[0], px[1], px[2]);
   }
 
   async function sampleDepthAtLngLat(map, lngLat) {
@@ -175,6 +174,7 @@
       x: Number(match[3]),
       y: Number(match[4]),
       palette: params.get('palette') || 'rainbowcolour',
+      mode: params.get('mode') || 'depth',
     };
   }
 
@@ -207,7 +207,7 @@
 
   maplibregl.addProtocol('boostdempmtiles', async (params) => {
     if (params.signal?.aborted) return { data: new Uint8Array() };
-    const { pmtilesUrl, z, x, y } = parseRawRgbUrl(params.url);
+    const { pmtilesUrl, z, x, y, mode } = parseRawRgbUrl(params.url);
     const rawKey = `dem:${pmtilesUrl}:${z}/${x}/${y}`;
 
     let rawPromise = rawBytesCache.get(rawKey);
@@ -239,16 +239,18 @@
     const data = img.data;
 
     for (let i = 0; i < data.length; i += 4) {
-      // Raw value from PMTiles (assumed to be depth in decimeters or similar scale)
-      const rawDepthValue = data[i] * 65536 + data[i + 1] * 256 + data[i + 2];
+      const elevation = decodeTerrainRgbElevation(data[i], data[i + 1], data[i + 2]);
       
-      // Target: rawDepthValue 0 (land) -> 0m elevation
-      // Target: rawDepthValue D -> -D * 0.1 elevation (to match the scale in app.js)
-      const newElevation = -rawDepthValue * 0.1;
+      // Handle land (clamped to 0 for bathymetry focus)
+      let targetElevation = elevation > 0 ? 0 : elevation;
+
+      // Depth as Height (Inverted)
+      if (mode === 'height') {
+        targetElevation = -targetElevation;
+      }
       
-      // Re-encode to Mapbox Terrain-RGB for MapLibre
-      // Formula: NewRaw = (newElevation + 10000) * 10
-      const newRaw = Math.max(0, Math.round((newElevation + 10000) * 10));
+      // Re-encode to Mapbox Terrain-RGB
+      const newRaw = Math.max(0, Math.round((targetElevation + 10000) * 10));
       
       data[i] = (newRaw >> 16) & 0xFF;
       data[i + 1] = (newRaw >> 8) & 0xFF;
@@ -261,9 +263,10 @@
     return { data: bitmap };
   });
 
-  const styleSelect  = document.getElementById('style-select');
-  const landSelect   = document.getElementById('land-select');
-  const labelsToggle = document.getElementById('labels-toggle');
+  const styleSelect      = document.getElementById('style-select');
+  const landSelect       = document.getElementById('land-select');
+  const labelsToggle     = document.getElementById('labels-toggle');
+  const depthModeSelect  = document.getElementById('depth-mode-select');
 
   const SATELLITE_LAYER_ID = 'satellite-layer';
   const LABEL_LAYER_ID     = 'country-labels';
@@ -431,6 +434,14 @@
 
   landSelect.addEventListener('change', () => applyBasemapOptions());
   labelsToggle.addEventListener('change', () => applyBasemapOptions());
+
+  depthModeSelect.addEventListener('change', () => {
+    const mode = depthModeSelect.value;
+    const src = map.getSource('terrain-source');
+    if (src && src.setTiles) {
+      src.setTiles([`boostdempmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?mode=${mode}`]);
+    }
+  });
 
   const exagSlider = document.getElementById('exag-slider');
   const exagVal    = document.getElementById('exag-val');
