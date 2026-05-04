@@ -355,29 +355,53 @@
     // Guard: do nothing if the map style isn't loaded yet
     if (!map.loaded()) return;
 
-    const landTheme    = landSelect.value;
+    const landTheme     = landSelect.value;
     const labelsVisible = labelsToggle.checked;
-    const themes       = styleDoc.metadata?.themes || {};
-    const colors       = themes[landTheme] || themes.dark;
+    const themes        = styleDoc.metadata?.themes || {};
+    const colors        = themes[landTheme] || themes.dark;
+    const showSat       = landTheme === 'satellite';
 
+    // Apply background and overlay layer changes immediately
     map.setPaintProperty('background', 'background-color', colors.land);
-
-    if (map.getLayer(SATELLITE_LAYER_ID)) {
-      map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', landTheme === 'satellite' ? 'visible' : 'none');
-    }
 
     if (map.getLayer(BOUNDARY_LAYER_ID)) {
       map.setPaintProperty(BOUNDARY_LAYER_ID, 'line-color', colors.boundary);
     }
-
     if (map.getLayer(LABEL_LAYER_ID)) {
       map.setLayoutProperty(LABEL_LAYER_ID, 'visibility', labelsVisible ? 'visible' : 'none');
       map.setPaintProperty(LABEL_LAYER_ID, 'text-color', colors.label);
       map.setPaintProperty(LABEL_LAYER_ID, 'text-halo-color', colors.halo);
     }
 
+    // Satellite layer handling.
+    //
+    // Globe+terrain in MapLibre uses render-to-texture: all layers are rendered
+    // into a texture that is draped over the terrain mesh. This texture is cached
+    // between frames and is only rebuilt when a layer VISIBILITY changes (not just
+    // paint properties). This means a background-color paint change alone is not
+    // enough to force a terrain re-render, so the old colour sticks until the
+    // camera moves.
+    //
+    // Fix: for non-satellite themes, briefly show satellite at opacity 0
+    // (invisible but still in the render pipeline). This triggers a visibility
+    // change → terrain texture rebuild → new background colour appears immediately.
+    // The layer is hidden again on the next animation frame.
+    if (map.getLayer(SATELLITE_LAYER_ID)) {
+      if (showSat) {
+        map.setPaintProperty(SATELLITE_LAYER_ID, 'raster-opacity', 1);
+        map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', 'visible');
+      } else {
+        // Trigger terrain texture rebuild, then hide satellite next frame
+        map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', 'visible');
+        map.setPaintProperty(SATELLITE_LAYER_ID, 'raster-opacity', 0);
+        requestAnimationFrame(() => {
+          map.setLayoutProperty(SATELLITE_LAYER_ID, 'visibility', 'none');
+          map.setPaintProperty(SATELLITE_LAYER_ID, 'raster-opacity', 1);
+        });
+      }
+    }
+
     refreshLandThemeAttribution();
-    // No triggerRepaint() — setPaintProperty already schedules a repaint
   }
 
   function updateLegend(paletteName) {
