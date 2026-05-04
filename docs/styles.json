@@ -261,7 +261,7 @@
         "halo": "rgba(0,0,0,0.7)"
       },
       "light": {
-        "land": "#f8f4f0",
+        "land": "#F2F3F1",
         "water": "#aecfe2",
         "boundary": "#cfcdca",
         "label": "#000000",
