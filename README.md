@@ -57,6 +57,8 @@ Two GEBCO grid releases are used in this project:
 The GEBCO Grid is placed in the public domain. This project does not claim
 any official status and is not endorsed by GEBCO, the IHO, or the IOC.
 
+**GEBCO**: [General Bathymetric Chart of the Oceans](https://www.gebco.net/)
+
 **Colour Palettes**
 
 The `rainbowcolour`, `multicolour`, and `atlas_land` colour schemes are
