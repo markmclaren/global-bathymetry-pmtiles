@@ -66,6 +66,7 @@ for scientific visualisation purposes; this project is not affiliated with or
 endorsed by EMODnet.
 
 **Vector Basemaps**: [OpenFreeMap](https://openfreemap.org/)  
+**Land Polygons (3D black/white themes)**: [Natural Earth](https://www.naturalearthdata.com/)  
 **Satellite Imagery**: [Sentinel-2 Cloudless by EOX](https://s2maps.eu/)
 
 **Compute & Provenance**
