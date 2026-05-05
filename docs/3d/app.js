@@ -1,13 +1,8 @@
 (async () => {
-  const [styleResponse, style3dResponse] = await Promise.all([
-    fetch('../styles.json'),
-    fetch('style.json')
-  ]);
+  const styleResponse = await fetch('styles.json');
   if (!styleResponse.ok) throw new Error(`Failed to load styles.json: ${styleResponse.status}`);
-  if (!style3dResponse.ok) throw new Error(`Failed to load style.json: ${style3dResponse.status}`);
-  const styleDoc  = await styleResponse.json();
-  const mapStyle  = await style3dResponse.json();
-  const palettes  = styleDoc.metadata?.palettes || {};
+  const mapStyle  = await styleResponse.json();
+  const palettes  = mapStyle.metadata?.palettes || {};
 
   const RAWRGB_PMTILES_URL = 'https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/gebco_2026_terrain_rgb.pmtiles';
 
@@ -350,7 +345,7 @@
 
   function refreshLandThemeAttribution() {
     if (attributionControl) map.removeControl(attributionControl);
-    const attributions = styleDoc.metadata?.attributions || {};
+    const attributions = mapStyle.metadata?.attributions || {};
     const customAttribution = attributions[landSelect.value] || attributions.dark || '';
     attributionControl = new maplibregl.AttributionControl({
       compact: true,
@@ -367,7 +362,7 @@
 
     const landTheme     = landSelect.value;
     const labelsVisible = labelsToggle.checked;
-    const themes        = styleDoc.metadata?.themes || {};
+    const themes        = mapStyle.metadata?.themes || {};
     const colors        = themes[landTheme] || themes.dark;
     const showSat       = landTheme === 'satellite';
 
