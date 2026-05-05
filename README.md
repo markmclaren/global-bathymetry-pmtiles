@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="GlobalBathymetryExplorer.png" alt="Global Bathymetry Explorer">
+</div>
+
 # Global Bathymetry Explorer: Interactive 3D Seafloor Visualization
 
 A browser-based tool for exploring global seafloor topography in 2D and 3D,
