@@ -1,3 +1,5 @@
-*.pmtiles
 local/data/*
+!local/data/
 !local/data/.gitkeep
+!local/data/*.pmtiles
+local/data/test_z6.pmtiles

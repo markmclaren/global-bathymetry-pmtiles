@@ -160,15 +160,8 @@
 
   // ── Tile recolouring ─────────────────────────────────────────────────────────
 
-  async function recolorTerrainRgbTile(tileBytes, paletteName, landHex) {
+  async function recolorTerrainRgbTile(tileBytes, paletteName) {
     const lut = paletteLuts[paletteName] || paletteLuts.rainbowcolour;
-    // Decode land color so we can paint it directly into land pixels.
-    // This avoids relying on the background layer, which doesn't reliably
-    // update in globe+terrain render-to-texture mode.
-    const lh = landHex || '191a1a';
-    const landR = parseInt(lh.slice(0, 2), 16);
-    const landG = parseInt(lh.slice(2, 4), 16);
-    const landB = parseInt(lh.slice(4, 6), 16);
 
     const blob = new Blob([tileBytes], { type: detectMimeType(tileBytes) });
     const srcBitmap = await createImageBitmap(blob);
@@ -187,13 +180,7 @@
       if (data[i + 3] === 0) continue;
       const elevation = decodeTerrainRgbElevation(data[i], data[i + 1], data[i + 2]);
       if (elevation > 0) {
-        // Paint land with the theme color (opaque) instead of making it transparent.
-        // Changing landHex in the URL forces tile re-render, which correctly
-        // updates the terrain texture without fighting the render-to-texture cache.
-        data[i]     = landR;
-        data[i + 1] = landG;
-        data[i + 2] = landB;
-        data[i + 3] = 255;
+        data[i + 3] = 0;
         continue;
       }
       const idx = ((elevation - LUT_MIN) / LUT_RANGE * lutMax + 0.5) | 0;
@@ -239,7 +226,7 @@
     const cachedBitmapPromise = lruGet(recolouredTileCache, cacheKey);
     if (cachedBitmapPromise) return { data: await cachedBitmapPromise };
 
-    const { pmtilesUrl, z, x, y, palette, land } = parseRawRgbUrl(params.url);
+    const { pmtilesUrl, z, x, y, palette } = parseRawRgbUrl(params.url);
     const rawKey = `${pmtilesUrl}:${z}/${x}/${y}`;
 
     const recolourPromise = (async () => {
@@ -257,7 +244,7 @@
       const bytes = await rawPromise;
       if (!bytes) return new Uint8Array();
       if (params.signal?.aborted) return new Uint8Array();
-      return recolorTerrainRgbTile(bytes, palette, land);
+      return recolorTerrainRgbTile(bytes, palette);
     })();
 
     lruSet(recolouredTileCache, cacheKey, recolourPromise, MAX_RECOLOURED_CACHE_SIZE);
@@ -337,6 +324,8 @@
   });
 
   const SATELLITE_LAYER_ID = 'satellite-layer';
+  const LAND_BLACK_LAYER_ID = 'land-black';
+  const LAND_WHITE_LAYER_ID = 'land-white';
   const LABEL_LAYER_ID     = 'country-labels';
   const BOUNDARY_LAYER_ID  = 'country-boundaries';
 
@@ -362,12 +351,15 @@
   function refreshLandThemeAttribution() {
     if (attributionControl) map.removeControl(attributionControl);
     const attributions = styleDoc.metadata?.attributions || {};
+    const customAttribution = attributions[landSelect.value] || attributions.dark || '';
     attributionControl = new maplibregl.AttributionControl({
       compact: true,
-      customAttribution: attributions[landSelect.value] || attributions.dark
+      customAttribution
     });
     map.addControl(attributionControl, 'bottom-right');
   }
+
+  // ensureNaturalEarthLandLayer removed as it is now in style.json
 
   function applyBasemapOptions() {
     // Guard: do nothing if the map style isn't loaded yet
@@ -378,16 +370,17 @@
     const themes        = styleDoc.metadata?.themes || {};
     const colors        = themes[landTheme] || themes.dark;
     const showSat       = landTheme === 'satellite';
-    // For satellite theme the satellite raster is on top, land color doesn't matter visually.
-    // Use black to match the satellite theme's land value.
-    const landHex = colors.land.replace('#', '');
 
     map.setPaintProperty('background', 'background-color', colors.land);
 
-    // Update tile URL with new land color (same mechanism as palette switching)
-    const src = map.getSource('gebco-raster');
-    if (src && src.setTiles) {
-      src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${styleSelect.value}&land=${landHex}`]);
+    const isDark  = landTheme === 'dark';
+    const isLight = landTheme === 'light';
+
+    if (map.getLayer(LAND_BLACK_LAYER_ID)) {
+      map.setLayoutProperty(LAND_BLACK_LAYER_ID, 'visibility', isDark ? 'visible' : 'none');
+    }
+    if (map.getLayer(LAND_WHITE_LAYER_ID)) {
+      map.setLayoutProperty(LAND_WHITE_LAYER_ID, 'visibility', isLight ? 'visible' : 'none');
     }
 
     // Force terrain render-to-texture cache rebuild.
@@ -470,10 +463,7 @@
       const palette = e.target.value;
       const src = map.getSource('gebco-raster');
       if (src && src.setTiles) {
-        const themes  = styleDoc.metadata?.themes || {};
-        const colors  = themes[landSelect.value] || themes.dark;
-        const landHex = colors.land.replace('#', '');
-        src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${palette}&land=${landHex}`]);
+        src.setTiles([`rawrgbpmtiles://${RAWRGB_PMTILES_URL}/{z}/{x}/{y}?palette=${palette}`]);
       }
       updateLegend(palette);
     });

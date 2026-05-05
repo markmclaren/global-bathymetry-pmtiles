@@ -33,6 +33,11 @@
       "tileSize": 256,
       "maxzoom": 10,
       "attribution": "Bathymetry &copy; <a href=\"https://www.gebco.net/\">GEBCO</a> | PMTiles via <a href=\"https://isambard.ac.uk\">Isambard-AI</a>"
+    },
+    "land-source": {
+      "type": "vector",
+      "url": "pmtiles://land.pmtiles",
+      "attribution": "Land polygons &copy; <a href=\"https://www.naturalearthdata.com/\">Natural Earth</a>"
     }
   },
   "layers": [
@@ -55,6 +60,27 @@
       "paint": {
         "raster-opacity": 0.95,
         "raster-fade-duration": 0
+      }
+    },
+    {
+      "id": "land-black",
+      "type": "fill",
+      "source": "land-source",
+      "source-layer": "land",
+      "paint": {
+        "fill-color": "#191a1a",
+        "fill-opacity": 1
+      }
+    },
+    {
+      "id": "land-white",
+      "type": "fill",
+      "source": "land-source",
+      "source-layer": "land",
+      "layout": { "visibility": "none" },
+      "paint": {
+        "fill-color": "#ffffff",
+        "fill-opacity": 1
       }
     },
     {
