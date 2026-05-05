@@ -331,7 +331,7 @@
     },
     "land-source": {
       "type": "vector",
-      "url": "pmtiles://land.pmtiles",
+      "url": "pmtiles://https://huggingface.co/datasets/markmclaren/global-bathymetry-pmtiles/resolve/main/land.pmtiles",
       "attribution": "Land polygons &copy; <a href=\"https://www.naturalearthdata.com/\">Natural Earth</a>"
     }
   },
